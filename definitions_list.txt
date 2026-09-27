@@ -1,0 +1,702 @@
+[sidebar] (div) Contents 
+         
+              Scope  
+              Normative references  
+              Compliance of ISLisp processors and text  
+              Terms and definitions  
+              Notation and conventions  
+              Lexemes 
+                 
+                      Separators  
+                      Comments  
+                 
+             
+              Textual representation  
+              Reserved identifiers  
+              Errors 
+                 
+                      Classes of error specification  
+                      Pervasive error types  
+                 
+             
+              Classes 
+                 
+                      Metaclasses  
+                      Predefined classes  
+                      Standard classes 
+                         
+                              Slots  
+                              Creating instances of classes  
+                         
+                     
+                 
+             
+              Scope and extent 
+                 
+                      The lexical principle  
+                      Scope of identifiers  
+                      Some specific scope rules  
+                      Extent  
+                 
+             
+              Forms and evaluation 
+                 
+                      Forms  
+                      Function application forms  
+                      Special forms  
+                      Defining forms  
+                      Macro forms  
+                      The evaluation model  
+                      Functions  
+                      Defining operators  
+                 
+             
+              Predicates 
+                 
+                      Boolean values  
+                      Class predicates  
+                      Equality  
+                      Logical connectives  
+                 
+             
+              Control structure 
+                 
+                      Constants  
+                      Variables  
+                      Dynamic variables  
+                      Conditional expressions  
+                      Sequencing forms  
+                      Iteration  
+                      Non-local exits  
+                      Establishing and invoking non-local exits  
+                      Assuring data consistency during non-local exits  
+                 
+             
+              Objects 
+                 
+                      Defining classes 
+                         
+                              Determining the class precedence list  
+                              Accessing slots  
+                              Inheritance of slots and slot options  
+                         
+                     
+                      Generic functions 
+                         
+                              Defining generic functions  
+                              Defining methods for generic functions 
+                                 
+                                      Agreement on parameter specializers and qualifiers  
+                                      Congruent lambda-lists for all methods of a generic function  
+                                 
+                             
+                              Inheritance of methods  
+                         
+                     
+                      Calling generic functions 
+                         
+                              Selecting the applicable methods  
+                              Sorting the applicable methods  
+                              Applying methods 
+                                 
+                                      Simple method combination  
+                                      Standard method combination  
+                                 
+                             
+                              Calling more general methods  
+                         
+                     
+                      Object creation and initialization 
+                         
+                              Initialize-object  
+                         
+                     
+                      Class enquiry  
+                 
+             
+              Macros  
+              Declarations and coercions  
+              Symbol class 
+                 
+                      Symbol names 
+                         
+                              Notation for symbols  
+                              Alphabetic case in symbol names  
+                              nil and ()  
+                         
+                     
+                      Symbol properties  
+                      Unnamed symbols  
+                 
+             
+              Number class 
+                 
+                      Number class  
+                      Float class  
+                      Integer class  
+                 
+             
+              Character class  
+              List class 
+                 
+                      Cons  
+                      Null class  
+                      List operations  
+                 
+             
+              Arrays 
+                 
+                      Array classes  
+                      General arrays  
+                      Array operations  
+                 
+             
+              Vectors  
+              String class  
+              Sequence functions  
+              Stream class 
+                 
+                      Streams to files  
+                      Other streams  
+                 
+             
+              Input and output 
+                 
+                      Argument conventions for input functions  
+                      Character I/O  
+                      Binary I/O  
+                 
+             
+              Files  
+              Condition system 
+                 
+                      Conditions  
+                      Signaling and handling conditions 
+                         
+                              Operations relating to condition signaling  
+                              Operations relating to condition handling  
+                         
+                     
+                      Data associated with condition classes 
+                         
+                              Arithmetic errors  
+                              Domain errors  
+                              Parse errors  
+                              Simple errors  
+                              Stream errors  
+                              Undefined entity errors  
+                         
+                     
+                      Error identification  
+                 
+             
+              Miscellaneous  
+              Index
+[scope] (h3) Scope
+[normative_references] (h3) Normative references
+[compliance] (h3) Compliance of ISLisp processors and text
+[constant_violation] (p) A complying ISLISP text shall not attempt to create a lexical variable binding for any named constant defined in this document. It is a violation if any such attempt is made.
+[terms_and_definitions] (h3) Terms and definitions
+[td_abstract_class] (h4) abstract class
+[td_activation] (h4) activation
+[td_accessor] (h4) accessor
+[td_argument_position] (h4) argument position
+[td_binding] (h4) binding
+[td_class] (h4) class
+[td_condition] (h4) condition
+[td_definition_point] (h4) definition point
+[td_direct_instance] (h4) direct instance
+[td_dynamic] (h4) dynamic
+[td_dynamic_variable] (h4) dynamic variable
+[td_evaluation] (h4) evaluation
+[td_execution] (h4) execution
+[td_extension] (h4) extension
+[td_form] (h4) form
+[td_function] (h4) function
+[td_generic_function] (h4) generic function
+[td_identifier] (h4) identifier
+[td_immutable_binding] (h4) immutable binding
+[td_immutable_object] (h4) immutable object
+[td_implementation_defined] (h4) implementation defined
+[td_implementation_dependent] (h4) implementation dependent
+[td_inheritance] (h4) inheritance
+[td_instance] (h4) instance
+[td_literal] (h4) literal
+[td_metaclass] (h4) metaclass
+[td_method] (h4) method
+[td_object] (h4) object
+[td_operator] (h4) operator
+[td_operator_position] (h4) operator position
+[td_parameter_profile] (h4) parameter profile
+[td_place] (h4) place
+[td_process] (h4) process
+[td_processor] (h4) processor
+[td_program] (h4) program
+[td_scope] (h4) scope
+[td_slot] (h4) slot
+[td_text] (h4) text
+[td_toplevel_form] (h4) toplevel form
+[td_toplevel_scope] (h4) toplevel scope
+[td_writer] (h4) writer
+[notation_and_conventions] (h3) Notation and conventions
+[forms7] (p) The constituents of ISLISP text are called  forms . A  form  can be an  identifier , a  literal , or a  compound form . A  compound form  can be a  function application form , a  macro form , a  special form , or a  defining form .
+[evaluation_model] (p) An object is  prepared for execution ; this might include transformation or compilation, including macro expansion. The method of preparation for  execution  and its result are not defined in this document (with exception of the violations to be detected). After successful preparation for execution the result is ready for execution. The combination of preparation for execution and subsequent execution implements ISLISP's  evaluation model . The term “evaluation” is used because ISLISP is an expression language—each form has a value which is used to compute the value of the containing form. The results obtained when an entity is prepared for execution are designated throughout this document by the construction  prepared entity ;  e.g. ,  prepared form,   prepared special form.
+[form_patterns] (p) Given a form pattern (usually defined by its constant parts, the function name or special operator), → relates it to the class to which the result of the evaluation of all matching forms belong.
+[conventions] (p) In this document the conventions detailed below are used, except where noted:
+[create_] (dt) create-
+[def_] (dt) def
+[lexemes] (h3) Lexemes
+[separators] (h4) Separators
+[comments] (h4) Comments
+[textual_representation] (h3) Textual representation
+[null10] (dt) Null
+[list10] (dt) List
+[character] (dt) Character
+[cons10] (dt) Cons
+[integer10] (dt) Integer
+[float11] (dt) Float
+[vector11] (dt) Vector
+[array] (dt) Array
+[string11] (dt) String
+[symbol11] (dt) Symbol
+[reserved_identifiers] (h3) Reserved identifiers
+[errors] (h3) Errors
+[classes_of_error_specification] (h4) Classes of error specification
+[consequences_are_undefined] (dt) the consequences are undefined
+[pervasive_error_types] (h4) Pervasive error types
+[classes] (h3) Classes
+[class_precedence_list] (p) Each class has a class precedence list, which is a total ordering on the set of the given class and its superclasses. The total ordering is expressed as a list ordered from most specific to least specific. The class precedence list is used in several ways. In general, more specific classes can  shadow , or override, features that would otherwise be inherited from less specific classes. The method selection and combination process uses the class precedence list to order methods from most specific to least specific.
+[metaclasses] (h4) Metaclasses
+[figure_1] (div) Figure 1. Class Inheritance
+                 
+                      object 
+                         
+                              basic-array 
+                                 
+                                      basic-array* 
+                                         
+                                              general-array*  
+                                         
+                                     
+                                      basic-vector 
+                                         
+                                              general-vector  
+                                              string  
+                                         
+                                     
+                                 
+                             
+                              built-in-class  
+                              character  
+                              function 
+                                 
+                                      generic-function 
+                                         
+                                              standard-generic-function  
+                                         
+                                     
+                                 
+                             
+                              list 
+                                 
+                                      cons  
+                                      null  
+                                 
+                             
+                              symbol  
+                              number 
+                                 
+                                      float  
+                                      integer  
+                                 
+                             
+                              serious-condition 
+                                 
+                                      error 
+                                         
+                                              arithmetic-error ;
+                                                 
+                                                      division-by-zero  
+                                                      floating-point-overflow  
+                                                      floating-point-underflow  
+                                                 
+                                             
+                                              control-error  
+                                              parse-error  
+                                              program-error 
+                                                 
+                                                      domain-error  
+                                                      undefined-entity 
+                                                         
+                                                              unbound-variable  
+                                                              undefined-function  
+                                                         
+                                                     
+                                                 
+                                             
+                                              simple-error  
+                                              stream-error 
+                                                 
+                                                      end-of-stream  
+                                                 
+                                             
+                                         
+                                     
+                                      storage-exhausted  
+                                 
+                             
+                              standard-class  
+                              standard-object  
+                              stream
+[predefined_classes] (h4) Predefined classes
+[standard_classes] (h4) Standard classes
+[define_a_slot] (p) A class is said to  define  a slot with a given name when the  defclass  defining form for that class contains a slot specifier with that name. Defining a slot does not immediately create a slot; it causes a slot to be created each time an instance of the class is created.
+[accesible_slots] (p) A slot is said to be  accessible  in an instance of a class if the slot is defined by the class of the instance or is inherited from a superclass of that class. At most one slot of a given name can be accessible in an instance. A detailed explanation of the inheritance of slots is given in the section § 15.1.3 .
+[scope_and_extent] (h3) Scope and extent
+[the_lexical_principle] (h4) The lexical principle
+[scope_of_identifiers] (h4) Scope of identifiers
+[some_specific_scope_rules] (h4) Some specific scope rules
+[extent] (h4) Extent
+[dynamic_extent] (p) In other cases the processor creates entities that are associated with prepared text. The lifetime of such objects begins at the activation point of a defining construct and ends at the end of activation; in this case the object is said to have dynamic extent.
+[binding_established_disestablished] (p) The bindings established by defining forms may have indefinite extent. Even in local binding constructs, bindings might not vanish upon activation end of the prepared block—if one or more function objects are created during execution of the prepared block that contain references to those bindings, the bindings will have a lifetime equal to the longest lifetime of those function objects.
+[forms_and_evaluation] (h3) Forms and evaluation
+[forms] (h4) Forms
+[toplevel_form] (p) A  toplevel form  is a form that is either not lexically nested within another form or is lexically nested only within one or more  progn  forms. Special forms and function application forms at toplevel are called  set-up forms . It is a violation if a defining form is not a toplevel form.
+[function_application_forms] (h4) Function application forms
+[special_forms] (h4) Special forms
+[special_operator] (div) ( special-operator   argument *) →  result-class
+[defining_forms] (h4) Defining forms
+[macro_forms] (h4) Macro forms
+[the_evaluation_model] (h4) The evaluation model
+[executed_as_follows] (p) A prepared form is executed as follows:
+[functions] (h4) Functions
+[f_functionp] (div) ( functionp   obj ) →  boolean
+[s_function] (div) ( function   function-name ) →  function
+[s_lambda] (div) ( lambda   lambda-list   form *) →  function
+[s_labels] (div) ( labels  (( function-name   lambda-list   form *)*)  body-form *) →  object
+[s_flet] (div) ( flet  (( function-name   lambda-list   form *)*)  body-form *) →  object
+[f_apply] (div) ( apply   function   obj *  list ) →  object
+[f_funcall] (div) ( funcall   function   obj *) →  object
+[defining_operators] (h4) Defining operators
+[def_defconstant] (div) ( defconstant   name   form ) →  symbol
+[def_defglobal] (div) ( defglobal   name   form ) →  symbol
+[def_defdynamic] (div) ( defdynamic   name   form ) →  symbol
+[def_defun] (div) ( defun   function-name   lambda-list   form *) →  symbol
+[predicates] (h3) Predicates
+[boolean_values] (h4) Boolean values
+[quasi_booleans] (p) Any object other than  nil  is treated as true (not just  t ). When objects are treated as true or  nil  this way they are called quasi-booleans.
+[c_t] (div) t  →  symbol
+[c_nil] (div) nil  →  null
+[class_predicates] (h4) Class predicates
+[equality] (h4) Equality
+[f_eq] (div) ( eq   obj 1    obj 2 )  →  boolean
+[f_eql] (div) ( eql   obj 1    obj 2  ) →  boolean
+[f_equal] (div) ( equal   obj 1    obj 2 )  →  boolean
+[logical_connectives] (h4) Logical connectives
+[f_not] (div) ( not   obj ) →  boolean
+[s_and] (div) ( and   form *) →  object
+[s_or] (div) ( or   form *) →  object
+[control_structure] (h3) Control structure
+[constants] (h4) Constants
+[s_quote] (div) ( quote   obj ) →  object
+[variables] (h4) Variables
+[s_setq] (div) ( setq   var   form ) →  object
+[s_setf] (div) ( setf   place   form ) →  object
+[s_let] (div) ( let  (( var   form )*)  body-form *) →  object
+[s_let_s] (div) ( let*  (( var   form )*)  body-form *) →  object
+[dynamic_variables] (h4) Dynamic variables
+[s_dynamic] (div) ( dynamic   var ) →  object
+[s_setf_dynamic] (div) ( setf  ( dynamic   var )  form ) →  object
+[s_set_dynamic] (div) ( set-dynamic   form   var ) →  object
+[s_dynamic_let] (div) ( dynamic-let  (( var   form )*)  body-form *) →  object
+[conditional_expressions] (h4) Conditional expressions
+[s_if] (div) ( if   test-form   then-form  [ else-form ]) →  object
+[s_cond] (div) ( cond  ( test   form *)*) →  object
+[s_case] (div) ( case   keyform  (( key *)  form *)* [( t   form *)]) →  object
+[s_case_using] (div) ( case-using   predform   keyform  (( key *)  form *)* [( t   form *)]) →  object
+[sequencing_forms] (h4) Sequencing forms
+[s_progn] (div) ( progn   form *) →  object
+[iteration] (h4) Iteration
+[s_while] (div) ( while   test-form   body-form *) →  null
+[s_for] (div) ( for  ( iteration-spec *) ( end-test   result* )  form *) →  object
+[non_local_exits] (h4) Non-local exits
+[s_block] (div) ( block   name   form *) →  object
+[s_return_from] (div) ( return-from   name   result-form   transfers control and data
+[s_catch] (div) ( catch   tag-form   form *) →  object
+[s_throw] (div) ( throw   tag-form   result-form )  transfers control and data
+[dynamic_exits] (p) The special forms  catch  and  throw  provide a facility for programming of structured non-local dynamic exits. A  catch  form and a  throw  form are said to correspond if the  tag-form  of the  catch  and the  tag-form  of the  throw  evaluate to the same object, a  catch tag . A  catch tag  may be any object other than a number or a character; the comparison of  catch tags  uses  eq .
+[s_tagbody] (div) ( tagbody  { tagbody-tag  |  form }*) →  object
+[s_go] (div) ( go   tagbody-tag )  transfers control
+[s_unwind_protect] (div) ( unwind-protect   form   cleanup-form *) →  object
+[objects] (h3) Objects
+[defining_classes] (h4) Defining classes
+[definition_of_a_class] (p) The definition of a class includes the following:
+[def_defclass] (div) ( defclass   class-name  ( sc-name *) ( slot-spec *)  class-opt *) →  symbol
+[slot_accessors] (p) The generic functions, to which the methods created by the  :reader ,  :writer , and  :accessor  slot options belong are called slot accessors.
+[local_precedence_order] (p) When a class is defined, the order in which its direct superclasses are mentioned in the defining form is important. The new class has a local precedence order, which is a list consisting of the class followed by its direct superclasses in the order mentioned in its defclass defining form.
+[reader_writer_accessor] (p) The  :reader ,  :writer , and  :accessor  slot options create methods rather than define the characteristics of a slot. Reader and writer methods are inherited in the sense described in the section  §15.2.3 .
+[generic_functions] (h4) Generic functions
+[method] (p) A  method  consists of a method function, a lambda list, a sequence of  parameter specializers  that specify when the given method is applicable, and a sequence of  qualifiers  that is used by the  method combination  facility to distinguish among methods. Each required formal parameter of each method has an associated parameter specializer, and the method is invoked only on arguments that satisfy its parameter specializers.
+[f_generic_function_p] (div) ( generic-function-p   obj ) →  boolean
+[reader_writer_accessor2] (p) During preparation for execution, a  defmethod  form must be preceded by the  defgeneric  form for the generic function to be specialized. (Methods implicitly defined by  defclass  due to  :reader ,  :writer , or  :accessor  options do not need a preceding  defgeneric .)
+[def_defgeneric] (div) ( defgeneric   func-spec   lambda-list  { option  |  method-desc }*) →  symbol
+[def_defmethod] (div) ( defmethod   func-spec   method-qualifier *  parameter-profile   form *) →  symbol
+[method_qualifier] (p) Each  method-qualifier argument  is an object that is used as an attribute to the given method by method combination. A method qualifier is a non-nil symbol or keyword. The method combination type further restricts what a method qualifier may be. The standard method combination type allows for unqualified methods or methods whose sole qualifier is one of the keywords  :before ,  :after ,  :around .
+[calling_generic_functions] (h4) Calling generic functions
+[effective_method] (p) When a generic function is called with particular arguments, it must determine the code to execute. This code is called the  effective method  for those arguments. The effective method is a  combination  of the applicable methods in the generic function, which might be some or all of the defined methods. An error shall be signaled if a generic function is called and no methods apply.
+[default_method] (p) A method all of whose parameter specializers are the class named  object  is called a  default method ; it is always applicable but might be shadowed by a more specific method.
+[qualifiers] (p) Methods can have  qualifiers , which give the method combination procedure a way to distinguish among methods. A method that has one or more qualifiers is called a  qualified method . A method with no qualifiers is called an  unqualified method . Any object after  :method  and before the first list in  method-desc  is regarded as a qualifier, but only non-nil symbols and keywords are accepted as qualifiers. The qualifiers defined by standard method combination are keywords.
+[semantics_of_standard_method_combination] (p) The semantics of standard method combination is as follows:
+[l_call_next_method] (div) ( call-next-method ) →  object
+[l_next_method_p] (div) ( next-method-p ) →  boolean
+[object_creation] (h4) Object creation and initialization
+[gf_create] (div) ( create   class  { initarg   initval  }*) →  object
+[gf_initialize_object] (div) ( initialize-object   instance   initialization-arguments ) →  object
+[class_enquiry] (h4) Class enquiry
+[f_class_of] (div) ( class-of   obj ) →  class
+[f_instancep] (div) ( instancep   obj   class ) →  boolean
+[f_subclassp] (div) ( subclassp   class 1    class 2  ) →  boolean
+[s_class] (div) ( class   class-name ) →  class
+[macros] (h3) Macros
+[def_defmacro] (div) ( defmacro   macro-name   lambda-list   form *) →  symbol
+[syn_backquote] (div) ` form  →  object
+[syn_comma] (div) , form  →  object
+[syn_comma_at] (div) ,@ form  →  object
+[quasiquote] (p) `  or  quasiquote  constructs a list structure. quasiquote, like  quote , returns its argument unevaluated if no commas or the syntax  ,  (unquote) or  ,@  (unquote-splicing) appear within the  form .
+[declarations_and_coercions] (h3) Declarations and coercions
+[s_the] (div) ( the   class-name   form ) →  object
+[s_assure] (div) ( assure   class-name   form ) →  object
+[s_convert] (div) ( convert   obj   class-name ) →  object
+[symbol_class] (h3) Symbol class
+[f_symbolp] (div) ( symbolp   obj ) →  boolean
+[symbol_names] (h4) Symbol names
+[rest_66] (p) It is  implementation defined  whether the names of symbols can contain colon (:) or ampersand (&amp;). Consequently, whether &amp;rest and keywords ( e.g. ,  :rest ,  :before , and  :after ) are represented as symbols or something else is  implementation defined .
+[neutral_alphabetic_case] (p) Specifically, each implementation has an  implementation-defined  attribute called its  neutral alphabetic case , which is either  lowercase  or  uppercase.  If the neutral alphabetic case of an implementation is lowercase, the  neutral alphabetic characters  for that implementation are defined to be as follows:
+[symbol_properties] (h4) Symbol properties
+[f_property] (div) ( property   symbol   property-name  [ obj ]) →  object
+[s_setf_property] (div) ( setf  ( property   symbol   property-name )  obj ) →  object
+[f_set_property] (div) ( set-property   obj   symbol   property-name ) →  object
+[f_remove_property] (div) ( remove-property   symbol   property-name ) →  object
+[unnamed_symbols] (h4) Unnamed symbols
+[f_gensym] (div) ( gensym ) →  symbol
+[number_class] (h3) Number class
+[number_class_2] (h4) Number class
+[f_numberp] (div) ( numberp   obj ) →  boolean
+[f_parse_number] (div) ( parse-number   string ) →  number
+[f_math_eq] (div) ( =   x 1    x 2  ) →  boolean
+[f_math_neq] (div) ( /=   x1   x2 ) →  boolean
+[f_gteq] (div) ( &gt;=   x 1    x 2  ) →  boolean
+[f_lteq] (div) ( &lt;=   x 1    x 2  ) →  boolean
+[f_gt] (div) ( &gt;   x 1    x 2 )  →  boolean
+[f_lt] (div) ( &lt;   x 1    x 2  ) →  boolean
+[f_plus] (div) ( +   x *) →  number
+[f_multiply] (div) ( *   x *) →  number
+[f_minus] (div) ( -   x +) →  number
+[f_quotient] (div) ( quotient   dividend   divisor +) →  number
+[f_reciprocal] (div) ( reciprocal   x ) →  number
+[f_max] (div) ( max   x +) →  number
+[f_min] (div) ( min   x +) →  number
+[f_abs] (div) ( abs   x ) →  number
+[f_exp] (div) ( exp   x ) →  number
+[f_log] (div) ( log   x ) →  number
+[f_expt] (div) ( expt   x 1    x 2  ) →  number
+[f_sqrt] (div) ( sqrt   x ) →  number
+[c_pi] (div) *pi*  →  float
+[f_sin] (div) ( sin   x ) →  number
+[f_cos] (div) ( cos   x ) →  number
+[f_tan] (div) ( tan   x ) →  number
+[f_atan] (div) ( atan   x ) →  number
+[f_atan2] (div) ( atan2   x1   x2 ) →  number
+[f_sinh] (div) ( sinh   x ) →  number
+[f_cosh] (div) ( cosh   x ) →  number
+[f_tanh] (div) ( tanh   x ) →  number
+[f_atanh] (div) ( atanh   x ) →  number
+[float_class] (h4) Float class
+[c_most_positive_float] (div) *most-positive-float*  →  float
+[c_most_negative_float] (div) *most-negative-float*  →  float
+[f_floatp] (div) ( floatp   obj ) →  boolean
+[f_float] (div) ( float   x ) →  float
+[f_floor] (div) ( floor   x ) →  integer
+[f_ceiling] (div) ( ceiling   x ) →  integer
+[f_truncate] (div) ( truncate   x ) →  integer
+[f_round] (div) ( round   x ) →  integer
+[integer_class] (h4) Integer class
+[f_integerp] (div) ( integerp   obj ) →  boolean
+[f_div] (div) ( div   z 1    z 2 )  →  integer
+[f_mod] (div) ( mod   z 1    z 2 )  →  integer
+[f_gcd] (div) ( gcd   z 1    z 2  ) →  integer
+[f_lcm] (div) ( lcm   z 1    z 2  ) →  integer
+[f_isqrt] (div) ( isqrt   z ) →  integer
+[character_class] (h3) Character class
+[f_characterp] (div) ( characterp   obj ) →  boolean
+[f_char_eq] (div) ( char=   char 1    char 2  ) →  boolean
+[f_char_neq] (div) ( char/=   char 1    char 2  ) →  boolean
+[f_char_lt] (div) ( char&lt;   char 1    char 2 )  →  boolean
+[f_char_gt] (div) ( char&gt;   char 1    char 2  ) →  boolean
+[f_char_lteq] (div) ( char&lt;=   char 1    char 2  ) →  boolean
+[f_char_gteq] (div) ( char&gt;=   char 1    char 2  ) →  boolean
+[list_class] (h3) List class
+[cons] (h4) Cons
+[f_consp] (div) ( consp   obj ) →  boolean
+[f_cons] (div) ( cons   obj 1    obj 2  ) →  cons
+[f_car] (div) ( car   cons ) →  object
+[f_cdr] (div) ( cdr   cons ) →  object
+[s_setf_car] (div) ( setf  ( car   cons )  obj ) →  object
+[f_set_car] (div) ( set-car   obj   cons ) →  object
+[s_setf_cdr] (div) ( setf  ( cdr   cons )  obj ) →  object
+[f_set_cdr] (div) ( set-cdr   obj   cons ) →  object
+[null_class] (h4) Null class
+[f_null] (div) ( null   obj ) →  boolean
+[list_operations] (h4) List operations
+[f_listp] (div) ( listp   obj ) →  boolean
+[f_create_list] (div) ( create-list   i  [ initial-element ]) →  list
+[f_list] (div) ( list   obj *) →  list
+[f_reverse] (div) ( reverse   list ) →  list
+[f_nreverse] (div) ( nreverse   list ) →  list
+[f_append] (div) ( append   list *) →  list
+[f_member] (div) ( member   obj   list ) →  list
+[f_mapcar] (div) ( mapcar   function   list+ ) →  list
+[f_mapc] (div) ( mapc   function   list+ ) →  list
+[f_mapcan] (div) ( mapcan   function   list+ ) →  list
+[f_maplist] (div) ( maplist   function   list+ ) →  list
+[f_mapl] (div) ( mapl   function   list+ ) →  list
+[f_mapcon] (div) ( mapcon   function   list+ ) →  list
+[f_assoc] (div) ( assoc   obj   association-list ) →  list
+[arrays] (h3) Arrays
+[array_classes] (h4) Array classes
+[general_arrays] (h4) General arrays
+[array_operations] (h4) Array operations
+[f_basic_array_p] (div) ( basic-array-p   obj ) →  boolean
+[f_basic_array_s_p] (div) ( basic-array*-p   obj ) →  boolean
+[f_general_array_s_p] (div) ( general-array*-p   obj ) →  boolean
+[f_create_array] (div) ( create-array   dimensions  [ initial-element ]) →  basic-array
+[f_aref] (div) ( aref   basic-array   z *) →  object
+[f_garef] (div) ( garef   general-array   z *) →  object
+[s_setf_aref] (div) ( setf  ( aref   basic-array   z *)  obj ) →  object
+[f_set_aref] (div) ( set-aref   obj   basic-array   z *) →  object
+[f_set_garef] (div) ( set-garef   obj   general-array   z *) →  object
+[f_array_dimensions] (div) ( array-dimensions   basic-array ) →  list
+[vectors] (h3) Vectors
+[f_basic_vector_p] (div) ( basic-vector-p   obj ) →  boolean
+[f_general_vector_p] (div) ( general-vector-p   obj ) →  boolean
+[f_create_vector] (div) ( create-vector   i  [ initial-element ]) →  general-vector
+[f_vector] (div) ( vector   obj *) →  general-vector
+[string_class] (h3) String class
+[f_stringp] (div) ( stringp   obj ) →  boolean
+[f_create_string] (div) ( create-string   i  [ initial-character  ]) →  string
+[f_stringeq] (div) ( string=   string 1    string 2  ) →  quasi-boolean
+[f_stringneq] (div) ( string/=   string 1    string 2  ) →  quasi-boolean
+[f_stringlt] (div) ( string&lt;   string 1    string 2  ) →  quasi-boolean
+[f_stringgt] (div) ( string&gt;   string 1    string 2  ) →  quasi-boolean
+[f_stringgteq] (div) ( string&gt;=   string 1    string 2  ) →  quasi-boolean
+[f_stringlteq] (div) ( string&lt;=   string 1    string 2  ) →  quasi-boolean
+[f_char_index] (div) ( char-index   char   string  [ start-position ]) →  object
+[f_string_index] (div) ( string-index   substring   string  [ start-position ]) →  object
+[f_string_append] (div) ( string-append   string* ) →  string
+[sequence_functions] (h3) Sequence functions
+[f_length] (div) ( length   sequence ) →  integer
+[f_elt] (div) ( elt   sequence   z ) →  object
+[s_setf_elt] (div) ( setf  ( elt   sequence   z )  obj ) →  object
+[f_set_elt] (div) ( set-elt   obj   sequence   z ) →  object
+[f_subseq] (div) ( subseq   sequence   z 1    z 2  ) →  sequence
+[f_map_into] (div) ( map-into   destination   function   sequence *) →  sequence
+[stream_class] (h3) Stream class
+[f_streamp] (div) ( streamp   obj ) →  boolean
+[f_open_stream_p] (div) ( open-stream-p   obj ) →  boolean
+[f_input_stream_p] (div) ( input-stream-p   obj ) →  boolean
+[f_output_stream_p] (div) ( output-stream-p   obj ) →  boolean
+[f_standard_input] (div) ( standard-input ) →  stream
+[f_standard_output] (div) ( standard-output ) →  stream
+[f_error_output] (div) ( error-output ) →  stream
+[s_with_standard_input] (div) ( with-standard-input   stream-form   form *) →  object
+[s_with_standard_output] (div) ( with-standard-output   stream-form   form *) →  object
+[s_with_error_output] (div) ( with-error-output   stream-form   form *) →  object
+[streams_to_files] (h4) Streams to files
+[f_open_input_file] (div) ( open-input-file   filename  [ element-class ]) →  stream
+[f_open_output_file] (div) ( open-output-file   filename  [ element-class ]) →  stream
+[f_open_io_file] (div) ( open-io-file   filename  [ element-class ]) →  stream
+[s_with_open_output_file] (div) ( with-open-output-file  ( name   filename  [ element-class ])  form *) →  object
+[s_with_open_io_file] (div) ( with-open-io-file  ( name   filename  [ element-class ])  form *) →  object
+[s_with_open_input_file] (div) ( with-open-input-file  ( name   filename  [ element-class ])  form *) →  object
+[f_close] (div) ( close   stream ) →  implementation defined
+[f_finish_output] (div) ( finish-output   stream ) →  null
+[other_streams] (h4) Other streams
+[f_create_string_input_stream] (div) ( create-string-input-stream   string ) →  stream
+[f_create_string_output_stream] (div) ( create-string-output-stream ) →  stream
+[f_get_output_stream_string] (div) ( get-output-stream-string   stream ) →  string
+[input_and_output] (h3) Input and output
+[argument_conventions] (h4) Argument conventions for input functions
+[character_io] (h4) Character I/O
+[f_read] (div) ( read  [ input-stream  [ eos-error-p  [ eos-value ]]]) →  object
+[f_read_char] (div) ( read-char  [ input-stream  [ eos-error-p  [ eos-value ]]]) →  object
+[f_preview_char] (div) ( preview-char  [ input-stream  [ eos-error-p  [ eos-value ]]]) →  object
+[f_read_line] (div) ( read-line  [ input-stream  [ eos-error-p  [ eos-value ]]]) →  object
+[f_stream_ready_p] (div) ( stream-ready-p   input-stream ) →  boolean
+[f_format] (div) ( format   output-stream   format-string   obj *) →  null
+[f_format_char] (div) ( format-char   output-stream   char ) →  null
+[f_format_float] (div) ( format-float   output-stream   float ) →  null
+[f_format_fresh_line] (div) ( format-fresh-line   output-stream ) →  null
+[f_format_integer] (div) ( format-integer   output-stream   integer   radix ) →  null
+[f_format_object] (div) ( format-object   output-stream   obj   escape-p ) →  null
+[f_format_tab] (div) ( format-tab   output-stream   column ) →  null
+[binary_io] (h4) Binary I/O
+[f_read_byte] (div) ( read-byte   input-stream  [ eos-error-p  [ eos-value ]]) →  integer
+[f_write_byte] (div) ( write-byte   z   output-stream ) →  integer
+[files] (h3) Files
+[f_probe_file] (div) ( probe-file   filename ) →  boolean
+[f_file_position] (div) ( file-position   stream ) →  integer
+[f_set_file_position] (div) ( set-file-position   stream   z ) →  integer
+[f_file_length] (div) ( file-length   filename   element-class ) →  object
+[condition_system] (h3) Condition system
+[error_system] (p) The condition system, sometimes called the  error system,  is a facility which permits problem situations detected at runtime to be represented and resolved while still under the control of a conforming program.
+[conditions] (h4) Conditions
+[error_conditions] (p) Conditions that represent situations involving dynamically detected program errors are called  error conditions . Error conditions and those conditions that represent implementation limitations that may not be symptomatic of program errors are collectively called  serious conditions .
+[signaling_and_handling] (h4) Signaling and handling conditions
+[f_error] (div) ( error   error-string   obj *) →  object
+[f_cerror] (div) ( cerror   continue-string   error-string   obj *) →  object
+[f_signal_condition] (div) ( signal-condition   condition   continuable ) →  object
+[s_ignore_errors] (div) ( ignore-errors   form *) →  object
+[gf_report_condition] (div) ( report-condition   condition   stream ) →  condition
+[f_condition_continuable] (div) ( condition-continuable   condition ) →  object
+[f_continue_condition] (div) ( continue-condition   condition  [ value ])  transfers control and data
+[s_with_handler] (div) ( with-handler   handler   form *) →  object
+[data_associated_with_condition_classes] (h4) Data associated with condition classes
+[f_arithmetic_error_operation] (div) ( arithmetic-error-operation   arithmetic-error ) →  function
+[f_arithmetic_error_operands] (div) ( arithmetic-error-operands   arithmetic-error ) →  list
+[f_domain_error_object] (div) ( domain-error-object   domain-error ) →  object
+[f_domain_error_expected_class] (div) ( domain-error-expected-class   domain-error ) →  class
+[f_parse_error_string] (div) ( parse-error-string   parse-error ) →  string
+[f_parse_error_expected_class] (div) ( parse-error-expected-class   parse-error ) →  class
+[f_simple_error_format_string] (div) ( simple-error-format-string   simple-error ) →  string
+[f_simple_error_format_arguments] (div) ( simple-error-format-arguments   simple-error ) →  list
+[f_stream_error_stream] (div) ( stream-error-stream   stream-error ) →  stream
+[f_undefined_entity_name] (div) ( undefined-entity-name   undefined-entity ) →  symbol
+[f_undefined_entity_namespace] (div) ( undefined-entity-namespace   undefined-entity ) →  symbol
+[error_identification] (h4) Error identification
+[e_arity_error] (dt) arity-error
+[e_cannot_create_array] (dt) cannot-create-array
+[e_cannot_create_cons] (dt) cannot-create-cons
+[e_cannot_create_list] (dt) cannot-create-list
+[e_cannot_create_sequence] (dt) cannot-create-sequence
+[e_cannot_create_string] (dt) cannot-create-string
+[e_cannot_create_vector] (dt) cannot-create-vector
+[e_cannot_parse_number] (dt) cannot-parse-number
+[e_control_error] (dt) control-error
+[e_division_by_zero] (dt) division-by-zero
+[e_domain_error] (dt) domain-error
+[e_end_of_stream] (dt) end-of-stream
+[e_immutable_binding] (dt) immutable-binding
+[e_improper_argument_list] (dt) improper-argument-list
+[e_index_out_of_range] (dt) index-out-of-range
+[e_not_an_input_stream] (dt) not-an-input-stream
+[e_not_an_output_stream] (dt) not-an-output-stream
+[e_unbound_variable] (dt) unbound-variable
+[e_undefined_entity] (dt) undefined-entity
+[e_undefined_function] (dt) undefined-function
+[miscellaneous] (h3) Miscellaneous
+[f_identity] (div) ( identity   obj ) →  object
+[f_get_universal_time] (div) ( get-universal-time ) →  integer
+[f_get_internal_run_time] (div) ( get-internal-run-time ) →  integer
+[f_get_internal_real_time] (div) ( get-internal-real-time ) →  integer
+[f_internal_time_units_per_second] (div) ( internal-time-units-per-second ) →  integer
+[index] (h2) Index

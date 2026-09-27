@@ -1,0 +1,36 @@
+# Binaries and Libraries
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.o
+*.obj
+
+# Target executable
+cisl.exe
+libislisp_rt.a
+
+# Compiler generated temporary files and test outputs
+_cisl_tmp*
+tests/*.c
+tests/*.exe
+tests/*.o
+
+# Python artifacts (from documentation extraction scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini

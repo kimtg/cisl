@@ -1,0 +1,1 @@
+(characterp #\a)

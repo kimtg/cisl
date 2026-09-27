@@ -1,0 +1,252 @@
+
+=== KIND: special (42 items) ===
+  [special_operator] ( special-operator argument *) → result-class
+  [s_function] ( function function-name ) → function
+  [s_lambda] ( lambda lambda-list form *) → function
+  [s_labels] ( labels (( function-name lambda-list form *)*) body-form *) → object
+  [s_flet] ( flet (( function-name lambda-list form *)*) body-form *) → object
+  [s_and] ( and form *) → object
+  [s_or] ( or form *) → object
+  [s_quote] ( quote obj ) → object
+  [s_setq] ( setq var form ) → object
+  [s_let] ( let (( var form )*) body-form *) → object
+  [s_let_s] ( let* (( var form )*) body-form *) → object
+  [s_dynamic] ( dynamic var ) → object
+  [s_set_dynamic] ( set-dynamic form var ) → object
+  [s_dynamic_let] ( dynamic-let (( var form )*) body-form *) → object
+  [s_if] ( if test-form then-form [ else-form ]) → object
+  [s_cond] ( cond ( test form *)*) → object
+  [s_case] ( case keyform (( key *) form *)* [( t form *)]) → object
+  [s_case_using] ( case-using predform keyform (( key *) form *)* [( t form *)]) → object
+  [s_progn] ( progn form *) → object
+  [s_while] ( while test-form body-form *) → null
+  [s_for] ( for ( iteration-spec *) ( end-test result* ) form *) → object
+  [s_block] ( block name form *) → object
+  [s_return_from] ( return-from name result-form transfers control and data
+  [s_catch] ( catch tag-form form *) → object
+  [s_throw] ( throw tag-form result-form ) transfers control and data
+  [s_tagbody] ( tagbody { tagbody-tag | form }*) → object
+  [s_go] ( go tagbody-tag ) transfers control
+  [s_unwind_protect] ( unwind-protect form cleanup-form *) → object
+  [s_class] ( class class-name ) → class
+  [s_the] ( the class-name form ) → object
+  [s_assure] ( assure class-name form ) → object
+  [s_convert] ( convert obj class-name ) → object
+  [s_setf_property] ( setf ( property symbol property-name ) obj ) → object
+  [s_setf_car] ( setf ( car cons ) obj ) → object
+  [s_with_standard_input] ( with-standard-input stream-form form *) → object
+  [s_with_standard_output] ( with-standard-output stream-form form *) → object
+  [s_with_error_output] ( with-error-output stream-form form *) → object
+  [s_with_open_output_file] ( with-open-output-file ( name filename [ element-class ]) form *) → object
+  [s_with_open_io_file] ( with-open-io-file ( name filename [ element-class ]) form *) → object
+  [s_with_open_input_file] ( with-open-input-file ( name filename [ element-class ]) form *) → object
+  [s_ignore_errors] ( ignore-errors form *) → object
+  [s_with_handler] ( with-handler handler form *) → object
+
+=== KIND: function (168 items) ===
+  [f_functionp] ( functionp obj ) → boolean
+  [f_apply] ( apply function obj * list ) → object
+  [f_funcall] ( funcall function obj *) → object
+  [f_eq] ( eq obj 1 obj 2 ) → boolean
+  [f_eql] ( eql obj 1 obj 2 ) → boolean
+  [f_equal] ( equal obj 1 obj 2 ) → boolean
+  [f_not] ( not obj ) → boolean
+  [f_generic_function_p] ( generic-function-p obj ) → boolean
+  [f_class_of] ( class-of obj ) → class
+  [f_instancep] ( instancep obj class ) → boolean
+  [f_subclassp] ( subclassp class 1 class 2 ) → boolean
+  [f_symbolp] ( symbolp obj ) → boolean
+  [f_property] ( property symbol property-name [ obj ]) → object
+  [f_set_property] ( set-property obj symbol property-name ) → object
+  [f_remove_property] ( remove-property symbol property-name ) → object
+  [f_gensym] ( gensym ) → symbol
+  [f_numberp] ( numberp obj ) → boolean
+  [f_parse_number] ( parse-number string ) → number
+  [f_math_eq] ( = x 1 x 2 ) → boolean
+  [f_math_neq] ( /= x1 x2 ) → boolean
+  [f_gteq] ( &gt;= x 1 x 2 ) → boolean
+  [f_lteq] ( &lt;= x 1 x 2 ) → boolean
+  [f_gt] ( &gt; x 1 x 2 ) → boolean
+  [f_lt] ( &lt; x 1 x 2 ) → boolean
+  [f_plus] ( + x *) → number
+  [f_multiply] ( * x *) → number
+  [f_minus] ( - x +) → number
+  [f_quotient] ( quotient dividend divisor +) → number
+  [f_reciprocal] ( reciprocal x ) → number
+  [f_max] ( max x +) → number
+  [f_min] ( min x +) → number
+  [f_abs] ( abs x ) → number
+  [f_exp] ( exp x ) → number
+  [f_log] ( log x ) → number
+  [f_expt] ( expt x 1 x 2 ) → number
+  [f_sqrt] ( sqrt x ) → number
+  [f_sin] ( sin x ) → number
+  [f_cos] ( cos x ) → number
+  [f_tan] ( tan x ) → number
+  [f_atan] ( atan x ) → number
+  [f_atan2] ( atan2 x1 x2 ) → number
+  [f_sinh] ( sinh x ) → number
+  [f_cosh] ( cosh x ) → number
+  [f_tanh] ( tanh x ) → number
+  [f_atanh] ( atanh x ) → number
+  [f_floatp] ( floatp obj ) → boolean
+  [f_float] ( float x ) → float
+  [f_floor] ( floor x ) → integer
+  [f_ceiling] ( ceiling x ) → integer
+  [f_truncate] ( truncate x ) → integer
+  [f_round] ( round x ) → integer
+  [f_integerp] ( integerp obj ) → boolean
+  [f_div] ( div z 1 z 2 ) → integer
+  [f_mod] ( mod z 1 z 2 ) → integer
+  [f_gcd] ( gcd z 1 z 2 ) → integer
+  [f_lcm] ( lcm z 1 z 2 ) → integer
+  [f_isqrt] ( isqrt z ) → integer
+  [f_characterp] ( characterp obj ) → boolean
+  [f_char_eq] ( char= char 1 char 2 ) → boolean
+  [f_char_neq] ( char/= char 1 char 2 ) → boolean
+  [f_char_lt] ( char&lt; char 1 char 2 ) → boolean
+  [f_char_gt] ( char&gt; char 1 char 2 ) → boolean
+  [f_char_lteq] ( char&lt;= char 1 char 2 ) → boolean
+  [f_char_gteq] ( char&gt;= char 1 char 2 ) → boolean
+  [f_consp] ( consp obj ) → boolean
+  [f_cons] ( cons obj 1 obj 2 ) → cons
+  [f_car] ( car cons ) → object
+  [f_cdr] ( cdr cons ) → object
+  [f_set_car] ( set-car obj cons ) → object
+  [f_set_cdr] ( set-cdr obj cons ) → object
+  [f_null] ( null obj ) → boolean
+  [f_listp] ( listp obj ) → boolean
+  [f_create_list] ( create-list i [ initial-element ]) → list
+  [f_list] ( list obj *) → list
+  [f_reverse] ( reverse list ) → list
+  [f_nreverse] ( nreverse list ) → list
+  [f_append] ( append list *) → list
+  [f_member] ( member obj list ) → list
+  [f_mapcar] ( mapcar function list+ ) → list
+  [f_mapc] ( mapc function list+ ) → list
+  [f_mapcan] ( mapcan function list+ ) → list
+  [f_maplist] ( maplist function list+ ) → list
+  [f_mapl] ( mapl function list+ ) → list
+  [f_mapcon] ( mapcon function list+ ) → list
+  [f_assoc] ( assoc obj association-list ) → list
+  [f_basic_array_p] ( basic-array-p obj ) → boolean
+  [f_basic_array_s_p] ( basic-array*-p obj ) → boolean
+  [f_general_array_s_p] ( general-array*-p obj ) → boolean
+  [f_create_array] ( create-array dimensions [ initial-element ]) → basic-array
+  [f_aref] ( aref basic-array z *) → object
+  [f_garef] ( garef general-array z *) → object
+  [f_set_aref] ( set-aref obj basic-array z *) → object
+  [f_set_garef] ( set-garef obj general-array z *) → object
+  [f_array_dimensions] ( array-dimensions basic-array ) → list
+  [f_basic_vector_p] ( basic-vector-p obj ) → boolean
+  [f_general_vector_p] ( general-vector-p obj ) → boolean
+  [f_create_vector] ( create-vector i [ initial-element ]) → general-vector
+  [f_vector] ( vector obj *) → general-vector
+  [f_stringp] ( stringp obj ) → boolean
+  [f_create_string] ( create-string i [ initial-character ]) → string
+  [f_stringeq] ( string= string 1 string 2 ) → quasi-boolean
+  [f_stringneq] ( string/= string 1 string 2 ) → quasi-boolean
+  [f_stringlt] ( string&lt; string 1 string 2 ) → quasi-boolean
+  [f_stringgt] ( string&gt; string 1 string 2 ) → quasi-boolean
+  [f_stringgteq] ( string&gt;= string 1 string 2 ) → quasi-boolean
+  [f_stringlteq] ( string&lt;= string 1 string 2 ) → quasi-boolean
+  [f_char_index] ( char-index char string [ start-position ]) → object
+  [f_string_index] ( string-index substring string [ start-position ]) → object
+  [f_string_append] ( string-append string* ) → string
+  [f_length] ( length sequence ) → integer
+  [f_elt] ( elt sequence z ) → object
+  [f_set_elt] ( set-elt obj sequence z ) → object
+  [f_subseq] ( subseq sequence z 1 z 2 ) → sequence
+  [f_map_into] ( map-into destination function sequence *) → sequence
+  [f_streamp] ( streamp obj ) → boolean
+  [f_open_stream_p] ( open-stream-p obj ) → boolean
+  [f_input_stream_p] ( input-stream-p obj ) → boolean
+  [f_output_stream_p] ( output-stream-p obj ) → boolean
+  [f_standard_input] ( standard-input ) → stream
+  [f_standard_output] ( standard-output ) → stream
+  [f_error_output] ( error-output ) → stream
+  [f_open_input_file] ( open-input-file filename [ element-class ]) → stream
+  [f_open_output_file] ( open-output-file filename [ element-class ]) → stream
+  [f_open_io_file] ( open-io-file filename [ element-class ]) → stream
+  [f_close] ( close stream ) → implementation defined
+  [f_finish_output] ( finish-output stream ) → null
+  [f_create_string_input_stream] ( create-string-input-stream string ) → stream
+  [f_create_string_output_stream] ( create-string-output-stream ) → stream
+  [f_get_output_stream_string] ( get-output-stream-string stream ) → string
+  [f_read] ( read [ input-stream [ eos-error-p [ eos-value ]]]) → object
+  [f_read_char] ( read-char [ input-stream [ eos-error-p [ eos-value ]]]) → object
+  [f_preview_char] ( preview-char [ input-stream [ eos-error-p [ eos-value ]]]) → object
+  [f_read_line] ( read-line [ input-stream [ eos-error-p [ eos-value ]]]) → object
+  [f_stream_ready_p] ( stream-ready-p input-stream ) → boolean
+  [f_format] ( format output-stream format-string obj *) → null
+  [f_format_char] ( format-char output-stream char ) → null
+  [f_format_float] ( format-float output-stream float ) → null
+  [f_format_fresh_line] ( format-fresh-line output-stream ) → null
+  [f_format_integer] ( format-integer output-stream integer radix ) → null
+  [f_format_object] ( format-object output-stream obj escape-p ) → null
+  [f_format_tab] ( format-tab output-stream column ) → null
+  [f_read_byte] ( read-byte input-stream [ eos-error-p [ eos-value ]]) → integer
+  [f_write_byte] ( write-byte z output-stream ) → integer
+  [f_probe_file] ( probe-file filename ) → boolean
+  [f_file_position] ( file-position stream ) → integer
+  [f_set_file_position] ( set-file-position stream z ) → integer
+  [f_file_length] ( file-length filename element-class ) → object
+  [f_error] ( error error-string obj *) → object
+  [f_cerror] ( cerror continue-string error-string obj *) → object
+  [f_signal_condition] ( signal-condition condition continuable ) → object
+  [f_condition_continuable] ( condition-continuable condition ) → object
+  [f_continue_condition] ( continue-condition condition [ value ]) transfers control and data
+  [f_arithmetic_error_operation] ( arithmetic-error-operation arithmetic-error ) → function
+  [f_arithmetic_error_operands] ( arithmetic-error-operands arithmetic-error ) → list
+  [f_domain_error_object] ( domain-error-object domain-error ) → object
+  [f_domain_error_expected_class] ( domain-error-expected-class domain-error ) → class
+  [f_parse_error_string] ( parse-error-string parse-error ) → string
+  [f_parse_error_expected_class] ( parse-error-expected-class parse-error ) → class
+  [f_simple_error_format_string] ( simple-error-format-string simple-error ) → string
+  [f_simple_error_format_arguments] ( simple-error-format-arguments simple-error ) → list
+  [f_stream_error_stream] ( stream-error-stream stream-error ) → stream
+  [f_undefined_entity_name] ( undefined-entity-name undefined-entity ) → symbol
+  [f_undefined_entity_namespace] ( undefined-entity-namespace undefined-entity ) → symbol
+  [f_identity] ( identity obj ) → object
+  [f_get_universal_time] ( get-universal-time ) → integer
+  [f_get_internal_run_time] ( get-internal-run-time ) → integer
+  [f_get_internal_real_time] ( get-internal-real-time ) → integer
+  [f_internal_time_units_per_second] ( internal-time-units-per-second ) → integer
+
+=== KIND: defining (8 items) ===
+  [def_defconstant] ( defconstant name form ) → symbol
+  [def_defglobal] ( defglobal name form ) → symbol
+  [def_defdynamic] ( defdynamic name form ) → symbol
+  [def_defun] ( defun function-name lambda-list form *) → symbol
+  [def_defclass] ( defclass class-name ( sc-name *) ( slot-spec *) class-opt *) → symbol
+  [def_defgeneric] ( defgeneric func-spec lambda-list { option | method-desc }*) → symbol
+  [def_defmethod] ( defmethod func-spec method-qualifier * parameter-profile form *) → symbol
+  [def_defmacro] ( defmacro macro-name lambda-list form *) → symbol
+
+=== KIND: constant (5 items) ===
+  [c_t] t → symbol
+  [c_nil] nil → null
+  [c_pi] *pi* → float
+  [c_most_positive_float] *most-positive-float* → float
+  [c_most_negative_float] *most-negative-float* → float
+
+=== KIND: special-form (5 items) ===
+  [s_setf] ( setf place form ) → object
+  [s_setf_dynamic] ( setf ( dynamic var ) form ) → object
+  [s_setf_cdr] ( setf ( cdr cons ) obj ) → object
+  [s_setf_aref] ( setf ( aref basic-array z *) obj ) → object
+  [s_setf_elt] ( setf ( elt sequence z ) obj ) → object
+
+=== KIND: local (2 items) ===
+  [l_call_next_method] ( call-next-method ) → object
+  [l_next_method_p] ( next-method-p ) → boolean
+
+=== KIND: generic (3 items) ===
+  [gf_create] ( create class { initarg initval }*) → object
+  [gf_initialize_object] ( initialize-object instance initialization-arguments ) → object
+  [gf_report_condition] ( report-condition condition stream ) → condition
+
+=== KIND: syntax (3 items) ===
+  [syn_backquote] ` form → object
+  [syn_comma] , form → object
+  [syn_comma_at] ,@ form → object
