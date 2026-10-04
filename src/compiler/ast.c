@@ -198,6 +198,9 @@ ast_node_t* islisp_parse_ast(islisp_val form, comp_env_t *env) {
 
             n->as.lambda.num_params = pcount;
             n->as.lambda.param_names = (islisp_val*)malloc(sizeof(islisp_val) * (pcount > 0 ? pcount : 1));
+            n->as.lambda.param_types = (islisp_type_info_t*)calloc((pcount > 0 ? pcount : 1), sizeof(islisp_type_info_t));
+            n->as.lambda.return_type = TYPE_INFO_UNKNOWN;
+            n->as.lambda.is_unboxed_int = false;
             n->as.lambda.lexical_fns = env ? env->fns : ISLISP_NIL;
             p = param_spec;
             comp_env_t inner_env;
@@ -505,7 +508,16 @@ ast_node_t* islisp_parse_ast(islisp_val form, comp_env_t *env) {
 
         if (op == islisp_intern("the") || op == islisp_intern("assure")) {
             /* (the class-name form) / (assure class-name form) -> parse form */
-            return islisp_parse_ast(CAR(CDR(args)), env);
+            islisp_val cspec = CAR(args);
+            ast_node_t *inner = islisp_parse_ast(CAR(CDR(args)), env);
+            if (cspec == islisp_intern("<integer>")) {
+                inner->inferred_type = TYPE_INFO_FIXNUM;
+            } else if (cspec == islisp_intern("<float>")) {
+                inner->inferred_type = TYPE_INFO_FLOAT;
+            } else if (cspec == islisp_intern("<string>")) {
+                inner->inferred_type = TYPE_INFO_STRING;
+            }
+            return inner;
         }
 
         if (op == islisp_intern("class")) {

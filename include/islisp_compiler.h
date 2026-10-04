@@ -42,9 +42,20 @@ typedef enum {
     AST_FLET
 } ast_type_t;
 
+typedef enum {
+    TYPE_INFO_UNKNOWN = 0,
+    TYPE_INFO_FIXNUM  = 1,   /* 64-bit integer */
+    TYPE_INFO_FLOAT   = 2,   /* double */
+    TYPE_INFO_BOOL    = 3,   /* boolean: t or nil */
+    TYPE_INFO_CONS    = 4,   /* cons cell */
+    TYPE_INFO_STRING  = 5,   /* string */
+    TYPE_INFO_VECTOR  = 6    /* vector */
+} islisp_type_info_t;
+
 typedef struct ast_node {
     ast_type_t type;
     islisp_val raw_sexpr;
+    islisp_type_info_t inferred_type;
     union {
         struct {
             islisp_val val;
@@ -88,6 +99,9 @@ typedef struct ast_node {
             islisp_val rest_var;
             int num_params;
             islisp_val *param_names;
+            islisp_type_info_t *param_types;
+            islisp_type_info_t return_type;
+            bool is_unboxed_int;
             int body_count;
             struct ast_node **body;
             int fn_id;        /* unique C function ID */

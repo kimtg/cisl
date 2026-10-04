@@ -177,30 +177,30 @@ cisl -e "(mapcar (lambda (x) (* x x)) '(1 2 3 4 5))"
 
 ## Performance Benchmarks
 
-CISL compiles ISLisp programs directly into optimized ANSI C code, leveraging direct C function call conventions, immediate 64-bit tagged integer arithmetic, inlined comparison primitives, and GCC `-O3` native machine code generation.
+CISL compiles ISLisp programs directly into optimized ANSI C code, leveraging interprocedural type inference, unboxed native 64-bit integer specialization, direct C call conventions, immediate tagged arithmetic without branch checks, and GCC `-O3` native machine code generation.
 
 ### Recursive Fibonacci: `fib(40)`
 
-Standard naive recursive Fibonacci $F_{40} = 102,334,155$ ($204,668,309$ function invocations) benchmarked against **Common Lisp (SBCL 2.6.9)**, **Python 3.14 (CPython)**, and **Native C (GCC 14.2 -O2)** on an Intel Core i5-12400F (Windows 11):
+Standard naive recursive Fibonacci $F_{40} = 102,334,155$ ($204,668,309$ function invocations) benchmarked against **Common Lisp (SBCL 2.6.9)**, **Python 3.14 (CPython)**, and **Native C (GCC 14.2)** on an Intel Core i5-12400F (Windows 11):
 
 | Implementation | Internal Exec Time | Total Process Time | vs Python | vs SBCL (speed 3) |
 |:---|:---:|:---:|:---:|:---:|
-| **C (GCC 14.2 `-O2` Baseline)** | **0.133 s** | 0.486 s | **76.9×** | **4.7×** |
-| **CISL 1.0 (Standard `defun`)** | **0.273 s** | 0.289 s | **37.5×** | **2.3× faster** |
-| **CISL 1.0 (`labels` direct call)** | **0.405 s** | 0.423 s | **25.3×** | **1.5× faster** |
-| **Common Lisp: SBCL (speed 3, fixnum)** | **0.621 s** | 1.066 s | **16.5×** | 1.0× |
-| **Common Lisp: SBCL (Standard / untyped)** | **1.163 s** | 1.495 s | **8.8×** | 0.53× |
-| **Python 3.14.4 (CPython)** | **10.227 s** | 10.253 s | 1.0× | 0.06× |
+| **CISL 1.0 (`labels` / unboxed)** | **0.118 s** | **0.137 s** | **94.9×** | **5.2× faster** |
+| **CISL 1.0 (Standard `defun` / unboxed)** | **0.122 s** | **0.141 s** | **91.8×** | **5.0× faster** |
+| **C (GCC 14.2 `-O3` Reference)** | **0.146 s** | 0.174 s | **76.7×** | **4.2×** |
+| **Common Lisp: SBCL (speed 3, fixnum)** | **0.608 s** | 1.003 s | **18.4×** | 1.0× |
+| **Common Lisp: SBCL (Standard / untyped)** | **1.121 s** | 1.462 s | **10.0×** | 0.54× |
+| **Python 3.14.4 (CPython)** | **11.195 s** | 11.222 s | 1.0× | 0.05× |
 
 ```
 Execution Time (Lower is Faster):
 -----------------------------------------------------------------------------------------
-C (GCC -O2 Reference)     [0.13s] ■
-CISL (Standard defun)     [0.27s] ■■
-CISL (labels)             [0.40s] ■■■
-SBCL (speed 3, fixnum)    [0.62s] ■■■■■
-SBCL (Standard untyped)   [1.16s] ■■■■■■■■■
-Python 3.14 (CPython)    [10.23s] ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+CISL (labels / unboxed)    [0.12s] ■
+CISL (Standard defun)      [0.12s] ■
+C (GCC 14.2 Reference)     [0.15s] ■
+SBCL (speed 3, fixnum)     [0.61s] ■■■■■
+SBCL (Standard untyped)    [1.12s] ■■■■■■■■■
+Python 3.14 (CPython)     [11.20s] ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
 -----------------------------------------------------------------------------------------
 ```
 

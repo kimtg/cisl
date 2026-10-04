@@ -1,56 +1,56 @@
 {
   "c_gcc": {
     "name": "C (GCC 14.2 -O2 Reference)",
-    "internal_mean": 0.133,
-    "internal_min": 0.13,
-    "internal_std": 0.002645751311064593,
-    "process_mean": 0.48651636666909326,
-    "process_min": 0.13788059999933466,
-    "process_std": 0.5993811836498896
+    "internal_mean": 0.145971,
+    "internal_min": 0.135624,
+    "internal_std": 0.011424883500500135,
+    "process_mean": 0.1742786000001312,
+    "process_min": 0.1445036999994045,
+    "process_std": 0.0446556500228473
   },
   "sbcl_opt": {
     "name": "Common Lisp: SBCL (speed 3, fixnum)",
-    "internal_mean": 0.621128,
-    "internal_min": 0.604711,
-    "internal_std": 0.015825105592064792,
-    "process_mean": 1.0661694333321066,
-    "process_min": 0.9634210000003804,
-    "process_std": 0.17552656500678052
+    "internal_mean": 0.6082716666666667,
+    "internal_min": 0.605022,
+    "internal_std": 0.003691230463318883,
+    "process_mean": 1.0029720333338144,
+    "process_min": 0.9274077000009129,
+    "process_std": 0.11436338653615562
   },
   "sbcl_std": {
     "name": "Common Lisp: SBCL (Standard / untyped)",
-    "internal_mean": 1.1626536666666667,
-    "internal_min": 1.13417,
-    "internal_std": 0.04091242366730843,
-    "process_mean": 1.4946093333322399,
-    "process_min": 1.4647879999974975,
-    "process_std": 0.03671314047947924
+    "internal_mean": 1.1212453333333334,
+    "internal_min": 1.117979,
+    "internal_std": 0.002949535613165795,
+    "process_mean": 1.4621263666661737,
+    "process_min": 1.439536699999735,
+    "process_std": 0.02612903420638978
   },
   "cisl_labels": {
     "name": "CISL 1.0 (labels / direct call)",
-    "internal_mean": 0.4046666666666667,
-    "internal_min": 0.393,
-    "internal_std": 0.01457166199626291,
-    "process_mean": 0.4226305666670669,
-    "process_min": 0.4021647999979905,
-    "process_std": 0.03078428422022951
+    "internal_mean": 0.11800000000000001,
+    "internal_min": 0.117,
+    "internal_std": 0.0010000000000000009,
+    "process_mean": 0.13733583333366065,
+    "process_min": 0.12515330000132963,
+    "process_std": 0.019507172302087962
   },
   "cisl_defun": {
     "name": "CISL 1.0 (Standard defun)",
-    "internal_mean": 0.273,
-    "internal_min": 0.265,
-    "internal_std": 0.007000000000000006,
-    "process_mean": 0.2894546333360874,
-    "process_min": 0.2729293000011239,
-    "process_std": 0.018761544516940037
+    "internal_mean": 0.122,
+    "internal_min": 0.117,
+    "internal_std": 0.004582575694955836,
+    "process_mean": 0.14065009999952358,
+    "process_min": 0.1248273999990488,
+    "process_std": 0.020151997054405756
   },
   "python": {
     "name": "Python 3.14.4 (CPython)",
-    "internal_mean": 10.226494666666667,
-    "internal_min": 10.040885,
-    "internal_std": 0.26476058250867646,
-    "process_mean": 10.25285409999924,
-    "process_min": 10.064947999999276,
-    "process_std": 0.2669168366201108
+    "internal_mean": 11.195006333333334,
+    "internal_min": 11.07288,
+    "internal_std": 0.17907935553919482,
+    "process_mean": 11.221904266666266,
+    "process_min": 11.096814599999561,
+    "process_std": 0.18494344961428466
   }
 }

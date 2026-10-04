@@ -6,7 +6,7 @@ import statistics
 import json
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BENCH_DIR = os.path.join(ROOT_DIR, "benchmarks")
+BENCH_DIR = "benchmarks"
 
 def run_command(cmd, cwd=ROOT_DIR):
     res = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -18,22 +18,22 @@ def compile_targets():
     print("=== Compiling benchmark targets ===")
     
     # 1. CISL defun
-    cisl_lsp = os.path.join(BENCH_DIR, "fib_cisl.lsp")
-    cisl_exe = os.path.join(BENCH_DIR, "fib_cisl.exe")
+    cisl_lsp = os.path.join("benchmarks", "fib_cisl.lsp")
+    cisl_exe = os.path.join("benchmarks", "fib_cisl.exe")
     print(f"Compiling CISL defun -> {cisl_exe} ...")
-    run_command([os.path.join(ROOT_DIR, "cisl.exe"), "-o", cisl_exe, cisl_lsp])
+    run_command([".\\cisl.exe", "-o", cisl_exe, cisl_lsp])
     
     # 2. CISL labels
-    cisl_labels_lsp = os.path.join(BENCH_DIR, "fib_cisl_labels.lsp")
-    cisl_labels_exe = os.path.join(BENCH_DIR, "fib_cisl_labels.exe")
+    cisl_labels_lsp = os.path.join("benchmarks", "fib_cisl_labels.lsp")
+    cisl_labels_exe = os.path.join("benchmarks", "fib_cisl_labels.exe")
     print(f"Compiling CISL labels -> {cisl_labels_exe} ...")
-    run_command([os.path.join(ROOT_DIR, "cisl.exe"), "-o", cisl_labels_exe, cisl_labels_lsp])
+    run_command([".\\cisl.exe", "-o", cisl_labels_exe, cisl_labels_lsp])
     
     # 3. Native C Reference
-    c_src = os.path.join(BENCH_DIR, "fib_ref_c.c")
-    c_exe = os.path.join(BENCH_DIR, "fib_ref_c.exe")
+    c_src = os.path.join("benchmarks", "fib_ref_c.c")
+    c_exe = os.path.join("benchmarks", "fib_ref_c.exe")
     print(f"Compiling Reference C -> {c_exe} ...")
-    run_command(["gcc", "-O2", c_src, "-o", c_exe])
+    run_command(["gcc", "-O3", c_src, "-o", c_exe])
     
     print("Compilation complete.\n")
 

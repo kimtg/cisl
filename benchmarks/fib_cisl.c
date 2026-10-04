@@ -14,6 +14,7 @@ static islisp_val LIT_10;
 
 static islisp_val fn_direct_user_run_bench(void);
 static islisp_val fn_user_run_bench(islisp_val env, int argc, islisp_val *argv);
+static int64_t fn_unboxed_user_fib(int64_t);
 static islisp_val fn_direct_user_fib(islisp_val);
 static islisp_val fn_user_fib(islisp_val env, int argc, islisp_val *argv);
 
@@ -30,7 +31,7 @@ static islisp_val fn_direct_user_run_bench(void) {
         islisp_val init_2;
     islisp_val arg_3;
     arg_3 = TO_INT(40LL);
-    init_2 = fn_direct_user_fib(arg_3);
+    init_2 = TO_INT(fn_unboxed_user_fib(AS_INT(arg_3)));
         islisp_val V_res = init_2;
     {
         islisp_val init_4;
@@ -80,36 +81,41 @@ static islisp_val fn_user_run_bench(islisp_val env, int argc, islisp_val *argv) 
     return fn_direct_user_run_bench();
 }
 
-static islisp_val fn_direct_user_fib(islisp_val V_n) {
-    islisp_val return_val = ISLISP_NIL;
-    islisp_val test_13;
-    islisp_val arg_14;
-    arg_14 = V_n;
-    islisp_val arg_15;
-    arg_15 = TO_INT(2LL);
-    test_13 = islisp_fast_lt(arg_14, arg_15);
-    if (IS_TRUE(test_13)) {
+static int64_t fn_unboxed_user_fib(int64_t V_n) {
+    int64_t return_val = 0;
+    int64_t ucond_13;
+    int64_t utmp_14;
+    utmp_14 = V_n;
+    int64_t utmp_15;
+    utmp_15 = 2LL;
+    ucond_13 = (utmp_14 < utmp_15) ? 1 : 0;
+    if (ucond_13) {
     return_val = V_n;
     } else {
-    islisp_val arg_16;
-    islisp_val arg_17;
-    islisp_val arg_18;
-    arg_18 = V_n;
-    islisp_val arg_19;
-    arg_19 = TO_INT(1LL);
-    arg_17 = islisp_fast_sub(arg_18, arg_19);
-    arg_16 = fn_direct_user_fib(arg_17);
-    islisp_val arg_20;
-    islisp_val arg_21;
-    islisp_val arg_22;
-    arg_22 = V_n;
-    islisp_val arg_23;
-    arg_23 = TO_INT(2LL);
-    arg_21 = islisp_fast_sub(arg_22, arg_23);
-    arg_20 = fn_direct_user_fib(arg_21);
-    return_val = islisp_fast_add(arg_16, arg_20);
+    int64_t utmp_16;
+    int64_t utmp_17;
+    int64_t utmp_18;
+    utmp_18 = V_n;
+    int64_t utmp_19;
+    utmp_19 = 1LL;
+    utmp_17 = utmp_18 - utmp_19;
+    utmp_16 = fn_unboxed_user_fib(utmp_17);
+    int64_t utmp_20;
+    int64_t utmp_21;
+    int64_t utmp_22;
+    utmp_22 = V_n;
+    int64_t utmp_23;
+    utmp_23 = 2LL;
+    utmp_21 = utmp_22 - utmp_23;
+    utmp_20 = fn_unboxed_user_fib(utmp_21);
+    return_val = utmp_16 + utmp_20;
     }
     return return_val;
+}
+
+static islisp_val fn_direct_user_fib(islisp_val V_n) {
+    if (!IS_INT(V_n)) islisp_error("type-error", islisp_cons(islisp_intern("expected integer"), islisp_cons(V_n, ISLISP_NIL)));
+    return TO_INT(fn_unboxed_user_fib(AS_INT(V_n)));
 }
 
 static islisp_val fn_user_fib(islisp_val env, int argc, islisp_val *argv) {

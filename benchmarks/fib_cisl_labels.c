@@ -15,6 +15,7 @@ static islisp_val LIT_11;
 
 static islisp_val fn_direct_user_run_bench(void);
 static islisp_val fn_user_run_bench(islisp_val env, int argc, islisp_val *argv);
+static int64_t fn_unboxed_lambda_2(int64_t);
 static islisp_val fn_direct_lambda_2(islisp_val);
 static islisp_val fn_lambda_2(islisp_val env, int argc, islisp_val *argv);
 static islisp_val fn_direct_user_fib(islisp_val);
@@ -83,36 +84,41 @@ static islisp_val fn_user_run_bench(islisp_val env, int argc, islisp_val *argv) 
     return fn_direct_user_run_bench();
 }
 
-static islisp_val fn_direct_lambda_2(islisp_val V_k) {
-    islisp_val return_val = ISLISP_NIL;
-    islisp_val test_13;
-    islisp_val arg_14;
-    arg_14 = V_k;
-    islisp_val arg_15;
-    arg_15 = TO_INT(2LL);
-    test_13 = islisp_fast_lt(arg_14, arg_15);
-    if (IS_TRUE(test_13)) {
+static int64_t fn_unboxed_lambda_2(int64_t V_k) {
+    int64_t return_val = 0;
+    int64_t ucond_13;
+    int64_t utmp_14;
+    utmp_14 = V_k;
+    int64_t utmp_15;
+    utmp_15 = 2LL;
+    ucond_13 = (utmp_14 < utmp_15) ? 1 : 0;
+    if (ucond_13) {
     return_val = V_k;
     } else {
-    islisp_val arg_16;
-    islisp_val arg_17;
-    islisp_val arg_18;
-    arg_18 = V_k;
-    islisp_val arg_19;
-    arg_19 = TO_INT(1LL);
-    arg_17 = islisp_fast_sub(arg_18, arg_19);
-    arg_16 = fn_direct_lambda_2(arg_17);
-    islisp_val arg_20;
-    islisp_val arg_21;
-    islisp_val arg_22;
-    arg_22 = V_k;
-    islisp_val arg_23;
-    arg_23 = TO_INT(2LL);
-    arg_21 = islisp_fast_sub(arg_22, arg_23);
-    arg_20 = fn_direct_lambda_2(arg_21);
-    return_val = islisp_fast_add(arg_16, arg_20);
+    int64_t utmp_16;
+    int64_t utmp_17;
+    int64_t utmp_18;
+    utmp_18 = V_k;
+    int64_t utmp_19;
+    utmp_19 = 1LL;
+    utmp_17 = utmp_18 - utmp_19;
+    utmp_16 = fn_unboxed_lambda_2(utmp_17);
+    int64_t utmp_20;
+    int64_t utmp_21;
+    int64_t utmp_22;
+    utmp_22 = V_k;
+    int64_t utmp_23;
+    utmp_23 = 2LL;
+    utmp_21 = utmp_22 - utmp_23;
+    utmp_20 = fn_unboxed_lambda_2(utmp_21);
+    return_val = utmp_16 + utmp_20;
     }
     return return_val;
+}
+
+static islisp_val fn_direct_lambda_2(islisp_val V_k) {
+    if (!IS_INT(V_k)) islisp_error("type-error", islisp_cons(islisp_intern("expected integer"), islisp_cons(V_k, ISLISP_NIL)));
+    return TO_INT(fn_unboxed_lambda_2(AS_INT(V_k)));
 }
 
 static islisp_val fn_lambda_2(islisp_val env, int argc, islisp_val *argv) {
