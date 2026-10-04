@@ -43,6 +43,7 @@ test: $(TARGET) $(RUNTIME_LIB)
 	$(TARGET) --run tests/test_functions.lsp
 	$(TARGET) --run tests/test_ilos.lsp
 	$(TARGET) --run tests/test_gc.lsp
+	$(TARGET) --run tests/test_euler.lsp
 
 clean:
 	-rm -f src/runtime/*.o src/compiler/*.o src/*.o $(TARGET) $(RUNTIME_LIB)

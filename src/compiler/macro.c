@@ -337,10 +337,15 @@ static islisp_val expand_for(islisp_val args) {
     islisp_val result_forms = CDR(end_spec);
 
     islisp_val tag_start = islisp_gensym();
+    islisp_val tag_end = islisp_gensym();
+    islisp_val res_var = islisp_gensym();
 
-    /* Initial let bindings: ((var init) ...) */
+    /* Initial let bindings: ((res_var nil) (var init) ...) */
     islisp_val let_bindings = ISLISP_NIL;
     islisp_val *lb_tail = &let_bindings;
+
+    *lb_tail = islisp_cons(islisp_cons(res_var, islisp_cons(ISLISP_NIL, ISLISP_NIL)), ISLISP_NIL);
+    lb_tail = &(AS_CONS(*lb_tail)->cdr);
 
     /* Step variables and updates */
     islisp_val step_let_bindings = ISLISP_NIL;
@@ -377,12 +382,15 @@ static islisp_val expand_for(islisp_val args) {
     *tb_tail = islisp_cons(tag_start, ISLISP_NIL);
     tb_tail = &(AS_CONS(*tb_tail)->cdr);
 
-    /* (if end_test (return-from nil (progn result_forms...))) */
+    /* (if end_test (progn (setq res_var (progn result_forms...)) (go tag_end))) */
     islisp_val res_expr = islisp_cons(islisp_intern("progn"), result_forms);
+    islisp_val set_res = islisp_cons(islisp_intern("setq"), islisp_cons(res_var, islisp_cons(res_expr, ISLISP_NIL)));
+    islisp_val go_end = islisp_cons(islisp_intern("go"), islisp_cons(tag_end, ISLISP_NIL));
     islisp_val exit_if = islisp_cons(islisp_intern("if"),
                                      islisp_cons(end_test,
-                                                 islisp_cons(islisp_cons(islisp_intern("return-from"),
-                                                                         islisp_cons(SYM_NIL, islisp_cons(res_expr, ISLISP_NIL))),
+                                                 islisp_cons(islisp_cons(islisp_intern("progn"),
+                                                                         islisp_cons(set_res,
+                                                                                     islisp_cons(go_end, ISLISP_NIL))),
                                                              ISLISP_NIL)));
     *tb_tail = islisp_cons(exit_if, ISLISP_NIL);
     tb_tail = &(AS_CONS(*tb_tail)->cdr);
@@ -403,10 +411,16 @@ static islisp_val expand_for(islisp_val args) {
 
     /* (go tag_start) */
     *tb_tail = islisp_cons(islisp_cons(islisp_intern("go"), islisp_cons(tag_start, ISLISP_NIL)), ISLISP_NIL);
+    tb_tail = &(AS_CONS(*tb_tail)->cdr);
+
+    /* tag_end */
+    *tb_tail = islisp_cons(tag_end, ISLISP_NIL);
 
     islisp_val tagbody = islisp_cons(islisp_intern("tagbody"), tagbody_items);
     islisp_val let_form = islisp_cons(islisp_intern("let"),
-                                      islisp_cons(let_bindings, islisp_cons(tagbody, ISLISP_NIL)));
+                                      islisp_cons(let_bindings,
+                                                  islisp_cons(tagbody,
+                                                              islisp_cons(res_var, ISLISP_NIL))));
 
     return islisp_cons(islisp_intern("block"),
                        islisp_cons(SYM_NIL, islisp_cons(let_form, ISLISP_NIL)));

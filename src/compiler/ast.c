@@ -492,7 +492,14 @@ ast_node_t* islisp_parse_ast(islisp_val form, comp_env_t *env) {
         if (op == islisp_intern("convert")) {
             ast_node_t *n = alloc_ast(AST_CONVERT, form);
             n->as.convert_expr.obj = islisp_parse_ast(CAR(args), env);
-            n->as.convert_expr.target_class = CAR(CDR(args));
+            islisp_val target = CAR(CDR(args));
+            if (IS_CONS(target)) {
+                islisp_val t_op = CAR(target);
+                if (t_op == islisp_intern("class") || t_op == islisp_intern("quote")) {
+                    target = CAR(CDR(target));
+                }
+            }
+            n->as.convert_expr.target_class = target;
             return n;
         }
 
