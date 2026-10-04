@@ -175,8 +175,46 @@ cisl -e "(mapcar (lambda (x) (* x x)) '(1 2 3 4 5))"
 
 ---
 
+## Performance Benchmarks
+
+CISL compiles ISLisp programs directly into optimized ANSI C code, leveraging direct C function call conventions, immediate 64-bit tagged integer arithmetic, inlined comparison primitives, and GCC `-O3` native machine code generation.
+
+### Recursive Fibonacci: `fib(40)`
+
+Standard naive recursive Fibonacci $F_{40} = 102,334,155$ ($204,668,309$ function invocations) benchmarked against **Common Lisp (SBCL 2.6.9)**, **Python 3.14 (CPython)**, and **Native C (GCC 14.2 -O2)** on an Intel Core i5-12400F (Windows 11):
+
+| Implementation | Internal Exec Time | Total Process Time | vs Python | vs SBCL (speed 3) |
+|:---|:---:|:---:|:---:|:---:|
+| **C (GCC 14.2 `-O2` Baseline)** | **0.133 s** | 0.486 s | **76.9×** | **4.7×** |
+| **CISL 1.0 (Standard `defun`)** | **0.273 s** | 0.289 s | **37.5×** | **2.3× faster** |
+| **CISL 1.0 (`labels` direct call)** | **0.405 s** | 0.423 s | **25.3×** | **1.5× faster** |
+| **Common Lisp: SBCL (speed 3, fixnum)** | **0.621 s** | 1.066 s | **16.5×** | 1.0× |
+| **Common Lisp: SBCL (Standard / untyped)** | **1.163 s** | 1.495 s | **8.8×** | 0.53× |
+| **Python 3.14.4 (CPython)** | **10.227 s** | 10.253 s | 1.0× | 0.06× |
+
+```
+Execution Time (Lower is Faster):
+-----------------------------------------------------------------------------------------
+C (GCC -O2 Reference)     [0.13s] ■
+CISL (Standard defun)     [0.27s] ■■
+CISL (labels)             [0.40s] ■■■
+SBCL (speed 3, fixnum)    [0.62s] ■■■■■
+SBCL (Standard untyped)   [1.16s] ■■■■■■■■■
+Python 3.14 (CPython)    [10.23s] ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+-----------------------------------------------------------------------------------------
+```
+
+#### Reproducing Benchmarks
+The automated benchmark suite is available in the [`benchmarks/`](benchmarks/) directory:
+```bash
+python benchmarks/run_benchmark.py
+```
+
+---
+
 ## Conformance & Standards Reference
 
 CISL is developed according to:
 - **ISO/IEC 13816:1997(E) / 13816:2007(E)** Information Technology — Programming Languages — ISLISP
 - **Programming Language ISLISP Working Draft 23.0** (ISLisp HyperDraft specification)
+

@@ -449,4 +449,120 @@ islisp_val islisp_slot_value(islisp_val instance, islisp_val slot_name);
 islisp_val islisp_set_slot_value(islisp_val val, islisp_val instance, islisp_val slot_name);
 islisp_val islisp_slot_boundp(islisp_val instance, islisp_val slot_name);
 
+/* Fast inlined arithmetic, comparisons, and predicates */
+static inline islisp_val islisp_fast_add(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return TO_INT(AS_INT(a) + AS_INT(b));
+    }
+    islisp_val argv[2] = {a, b};
+    return islisp_add(2, argv);
+}
+
+static inline islisp_val islisp_fast_sub(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return TO_INT(AS_INT(a) - AS_INT(b));
+    }
+    islisp_val argv[2] = {a, b};
+    return islisp_sub(2, argv);
+}
+
+static inline islisp_val islisp_fast_mul(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return TO_INT(AS_INT(a) * AS_INT(b));
+    }
+    islisp_val argv[2] = {a, b};
+    return islisp_mul(2, argv);
+}
+
+static inline islisp_val islisp_fast_div(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        int64_t ib = AS_INT(b);
+        if (__builtin_expect(ib != 0, 1)) {
+            int64_t ia = AS_INT(a);
+            if (ia % ib == 0) return TO_INT(ia / ib);
+        }
+    }
+    return islisp_quotient(a, b);
+}
+
+static inline islisp_val islisp_fast_neg(islisp_val a) {
+    if (__builtin_expect(IS_INT(a), 1)) {
+        return TO_INT(-AS_INT(a));
+    }
+    islisp_val argv[1] = {a};
+    return islisp_sub(1, argv);
+}
+
+static inline islisp_val islisp_fast_lt(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return (AS_INT(a) < AS_INT(b)) ? ISLISP_T : ISLISP_NIL;
+    }
+    return islisp_num_lt(a, b);
+}
+
+static inline islisp_val islisp_fast_lteq(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return (AS_INT(a) <= AS_INT(b)) ? ISLISP_T : ISLISP_NIL;
+    }
+    return islisp_num_lteq(a, b);
+}
+
+static inline islisp_val islisp_fast_gt(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return (AS_INT(a) > AS_INT(b)) ? ISLISP_T : ISLISP_NIL;
+    }
+    return islisp_num_gt(a, b);
+}
+
+static inline islisp_val islisp_fast_gteq(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return (AS_INT(a) >= AS_INT(b)) ? ISLISP_T : ISLISP_NIL;
+    }
+    return islisp_num_gteq(a, b);
+}
+
+static inline islisp_val islisp_fast_eq(islisp_val a, islisp_val b) {
+    return (a == b) ? ISLISP_T : ISLISP_NIL;
+}
+
+static inline islisp_val islisp_fast_num_eq(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return (a == b) ? ISLISP_T : ISLISP_NIL;
+    }
+    return islisp_num_eq(a, b);
+}
+
+static inline islisp_val islisp_fast_num_neq(islisp_val a, islisp_val b) {
+    if (__builtin_expect((a & b & ISLISP_TAG_INT_MASK) == ISLISP_TAG_INT, 1)) {
+        return (a != b) ? ISLISP_T : ISLISP_NIL;
+    }
+    return islisp_num_neq(a, b);
+}
+
+static inline islisp_val islisp_fast_car(islisp_val c) {
+    if (__builtin_expect(IS_CONS(c), 1)) {
+        return CAR(c);
+    }
+    return islisp_car(c);
+}
+
+static inline islisp_val islisp_fast_cdr(islisp_val c) {
+    if (__builtin_expect(IS_CONS(c), 1)) {
+        return CDR(c);
+    }
+    return islisp_cdr(c);
+}
+
+static inline islisp_val islisp_fast_not(islisp_val v) {
+    return (v == ISLISP_NIL) ? ISLISP_T : ISLISP_NIL;
+}
+
+static inline islisp_val islisp_fast_consp(islisp_val v) {
+    return IS_CONS(v) ? ISLISP_T : ISLISP_NIL;
+}
+
+static inline islisp_val islisp_fast_integerp(islisp_val v) {
+    return IS_INT(v) ? ISLISP_T : ISLISP_NIL;
+}
+
 #endif /* ISLISP_RUNTIME_H */

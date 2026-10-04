@@ -19,6 +19,127 @@ static void reset_literals(void) {
     g_temp_count = 0;
 }
 
+typedef struct func_node {
+    ast_node_t *ast;
+    struct func_node *next;
+} func_node_t;
+
+static func_node_t *g_functions = NULL;
+
+static void add_function_node(ast_node_t *lam) {
+    if (!lam) return;
+    func_node_t *curr = g_functions;
+    while (curr) {
+        if (curr->ast == lam) return;
+        curr = curr->next;
+    }
+    func_node_t *fn = (func_node_t*)malloc(sizeof(func_node_t));
+    fn->ast = lam;
+    fn->next = g_functions;
+    g_functions = fn;
+}
+
+static ast_node_t* find_toplevel_defun(islisp_val sym) {
+    if (!IS_SYMBOL(sym)) return NULL;
+    func_node_t *curr = g_functions;
+    while (curr) {
+        if (curr->ast && curr->ast->type == AST_LAMBDA && curr->ast->as.lambda.name == sym) {
+            return curr->ast;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
+static ast_node_t* find_lambda_by_id(int fid) {
+    func_node_t *curr = g_functions;
+    while (curr) {
+        if (curr->ast && curr->ast->type == AST_LAMBDA && curr->ast->as.lambda.fn_id == fid) {
+            return curr->ast;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
+static void collect_functions(ast_node_t *n) {
+    if (!n) return;
+    if (n->type == AST_LAMBDA) {
+        add_function_node(n);
+    }
+    if (n->type == AST_DEFUN) {
+        add_function_node(n->as.defun_expr.lambda_ast);
+    }
+    switch (n->type) {
+        case AST_IF:
+            collect_functions(n->as.if_expr.test);
+            collect_functions(n->as.if_expr.then_branch);
+            collect_functions(n->as.if_expr.else_branch);
+            break;
+        case AST_PROGN:
+            for (int i = 0; i < n->as.progn.count; i++) collect_functions(n->as.progn.exprs[i]);
+            break;
+        case AST_LET:
+        case AST_LET_STAR:
+            for (int i = 0; i < n->as.let_expr.num_bindings; i++) collect_functions(n->as.let_expr.inits[i]);
+            for (int i = 0; i < n->as.let_expr.body_count; i++) collect_functions(n->as.let_expr.body[i]);
+            break;
+        case AST_FLET:
+            for (int i = 0; i < n->as.flet_expr.num_fns; i++) collect_functions(n->as.flet_expr.lambdas[i]);
+            for (int i = 0; i < n->as.flet_expr.body_count; i++) collect_functions(n->as.flet_expr.body[i]);
+            break;
+        case AST_SETQ:
+            collect_functions(n->as.setq.val);
+            break;
+        case AST_CALL:
+            for (int i = 0; i < n->as.call.argc; i++) collect_functions(n->as.call.args[i]);
+            break;
+        case AST_BLOCK:
+            for (int i = 0; i < n->as.block.body_count; i++) collect_functions(n->as.block.body[i]);
+            break;
+        case AST_RETURN_FROM:
+            collect_functions(n->as.return_from.val);
+            break;
+        case AST_TAGBODY:
+            for (int i = 0; i < n->as.tagbody.count; i++) {
+                if (n->as.tagbody.items[i]) collect_functions(n->as.tagbody.items[i]);
+            }
+            break;
+        case AST_CATCH:
+            collect_functions(n->as.catch_expr.tag);
+            for (int i = 0; i < n->as.catch_expr.count; i++) collect_functions(n->as.catch_expr.body[i]);
+            break;
+        case AST_THROW:
+            collect_functions(n->as.throw_expr.tag);
+            collect_functions(n->as.throw_expr.val);
+            break;
+        case AST_UNWIND_PROTECT:
+            collect_functions(n->as.unwind.protected_expr);
+            for (int i = 0; i < n->as.unwind.cleanup_count; i++) collect_functions(n->as.unwind.cleanups[i]);
+            break;
+        case AST_DYNAMIC_LET:
+            for (int i = 0; i < n->as.dynamic_let.num_bindings; i++) collect_functions(n->as.dynamic_let.inits[i]);
+            for (int i = 0; i < n->as.dynamic_let.body_count; i++) collect_functions(n->as.dynamic_let.body[i]);
+            break;
+        case AST_WITH_HANDLER:
+            collect_functions(n->as.with_handler.handler);
+            for (int i = 0; i < n->as.with_handler.body_count; i++) collect_functions(n->as.with_handler.body[i]);
+            break;
+        case AST_LAMBDA:
+            for (int i = 0; i < n->as.lambda.body_count; i++) collect_functions(n->as.lambda.body[i]);
+            break;
+        case AST_DEFUN:
+            collect_functions(n->as.defun_expr.lambda_ast);
+            break;
+        case AST_DEFMETHOD:
+            collect_functions(n->as.defmethod_expr.method_lambda);
+            break;
+        default:
+            break;
+    }
+}
+
+
 static const char *c_ident(const char *name) {
     static char bufs[8][256];
     static int idx = 0;
@@ -822,16 +943,24 @@ static void emit_ast(FILE *f, ast_node_t *n, const char *dest_var, comp_env_t *e
             islisp_val fn_entry = (env && IS_SYMBOL(fn_op)) ? islisp_assoc(fn_op, env->fns) : ISLISP_NIL;
             if (IS_CONS(fn_entry)) {
                 int local_fid = (int)AS_INT(CAR(CDR(fn_entry)));
-                fprintf(f, "    {\n");
-                fprintf(f, "        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
-                for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
-                fprintf(f, "};\n");
-                if (dest_var) {
-                    fprintf(f, "        %s = fn_lambda_%d(ISLISP_NIL, %d, c_argv);\n", dest_var, local_fid, argc);
+                ast_node_t *local_ast = find_lambda_by_id(local_fid);
+                if (local_ast && !local_ast->as.lambda.has_rest && argc == local_ast->as.lambda.num_params) {
+                    if (dest_var) fprintf(f, "    %s = fn_direct_lambda_%d(", dest_var, local_fid);
+                    else fprintf(f, "    fn_direct_lambda_%d(", local_fid);
+                    for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                    fprintf(f, ");\n");
                 } else {
-                    fprintf(f, "        fn_lambda_%d(ISLISP_NIL, %d, c_argv);\n", local_fid, argc);
+                    fprintf(f, "    {\n");
+                    fprintf(f, "        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
+                    for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                    fprintf(f, "};\n");
+                    if (dest_var) {
+                        fprintf(f, "        %s = fn_lambda_%d(ISLISP_NIL, %d, c_argv);\n", dest_var, local_fid, argc);
+                    } else {
+                        fprintf(f, "        fn_lambda_%d(ISLISP_NIL, %d, c_argv);\n", local_fid, argc);
+                    }
+                    fprintf(f, "    }\n");
                 }
-                fprintf(f, "    }\n");
             } else if (IS_SYMBOL(fn_op)) {
                 const char *fn_name = ((islisp_symbol_t*)fn_op)->name;
 
@@ -852,42 +981,109 @@ static void emit_ast(FILE *f, ast_node_t *n, const char *dest_var, comp_env_t *e
                     else fprintf(f, "        islisp_apply(%s, %d, c_argv);\n", argv_vars[0], argc - 1);
                     fprintf(f, "    }\n");
                 } else if (strcmp(fn_name, "+") == 0) {
-                    fprintf(f, "    {\n        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
-                    for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
-                    fprintf(f, "};\n");
-                    if (dest_var) fprintf(f, "        %s = islisp_add(%d, c_argv);\n", dest_var, argc);
-                    else fprintf(f, "        islisp_add(%d, c_argv);\n", argc);
-                    fprintf(f, "    }\n");
+                    if (argc == 0) {
+                        if (dest_var) fprintf(f, "    %s = TO_INT(0LL);\n", dest_var);
+                    } else if (argc == 1) {
+                        if (dest_var) fprintf(f, "    %s = %s;\n", dest_var, argv_vars[0]);
+                    } else if (argc == 2) {
+                        if (dest_var) fprintf(f, "    %s = islisp_fast_add(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                        else fprintf(f, "    islisp_fast_add(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                    } else {
+                        fprintf(f, "    {\n        islisp_val c_argv[%d] = {", argc);
+                        for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                        fprintf(f, "};\n");
+                        if (dest_var) fprintf(f, "        %s = islisp_add(%d, c_argv);\n", dest_var, argc);
+                        else fprintf(f, "        islisp_add(%d, c_argv);\n", argc);
+                        fprintf(f, "    }\n");
+                    }
                 } else if (strcmp(fn_name, "-") == 0) {
-                    fprintf(f, "    {\n        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
-                    for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
-                    fprintf(f, "};\n");
-                    if (dest_var) fprintf(f, "        %s = islisp_sub(%d, c_argv);\n", dest_var, argc);
-                    else fprintf(f, "        islisp_sub(%d, c_argv);\n", argc);
-                    fprintf(f, "    }\n");
+                    if (argc == 1) {
+                        if (dest_var) fprintf(f, "    %s = islisp_fast_neg(%s);\n", dest_var, argv_vars[0]);
+                        else fprintf(f, "    islisp_fast_neg(%s);\n", argv_vars[0]);
+                    } else if (argc == 2) {
+                        if (dest_var) fprintf(f, "    %s = islisp_fast_sub(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                        else fprintf(f, "    islisp_fast_sub(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                    } else {
+                        fprintf(f, "    {\n        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
+                        for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                        fprintf(f, "};\n");
+                        if (dest_var) fprintf(f, "        %s = islisp_sub(%d, c_argv);\n", dest_var, argc);
+                        else fprintf(f, "        islisp_sub(%d, c_argv);\n", argc);
+                        fprintf(f, "    }\n");
+                    }
                 } else if (strcmp(fn_name, "*") == 0) {
-                    fprintf(f, "    {\n        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
-                    for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
-                    fprintf(f, "};\n");
-                    if (dest_var) fprintf(f, "        %s = islisp_mul(%d, c_argv);\n", dest_var, argc);
-                    else fprintf(f, "        islisp_mul(%d, c_argv);\n", argc);
-                    fprintf(f, "    }\n");
+                    if (argc == 0) {
+                        if (dest_var) fprintf(f, "    %s = TO_INT(1LL);\n", dest_var);
+                    } else if (argc == 1) {
+                        if (dest_var) fprintf(f, "    %s = %s;\n", dest_var, argv_vars[0]);
+                    } else if (argc == 2) {
+                        if (dest_var) fprintf(f, "    %s = islisp_fast_mul(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                        else fprintf(f, "    islisp_fast_mul(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                    } else {
+                        fprintf(f, "    {\n        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
+                        for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                        fprintf(f, "};\n");
+                        if (dest_var) fprintf(f, "        %s = islisp_mul(%d, c_argv);\n", dest_var, argc);
+                        else fprintf(f, "        islisp_mul(%d, c_argv);\n", argc);
+                        fprintf(f, "    }\n");
+                    }
                 } else if (strcmp(fn_name, "/") == 0) {
-                    fprintf(f, "    {\n        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
-                    for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
-                    fprintf(f, "};\n");
-                    if (dest_var) fprintf(f, "        %s = islisp_div(%d, c_argv);\n", dest_var, argc);
-                    else fprintf(f, "        islisp_div(%d, c_argv);\n", argc);
-                    fprintf(f, "    }\n");
+                    if (argc == 1) {
+                        if (dest_var) fprintf(f, "    %s = islisp_reciprocal(%s);\n", dest_var, argv_vars[0]);
+                        else fprintf(f, "    islisp_reciprocal(%s);\n", argv_vars[0]);
+                    } else if (argc == 2) {
+                        if (dest_var) fprintf(f, "    %s = islisp_fast_div(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                        else fprintf(f, "    islisp_fast_div(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                    } else {
+                        fprintf(f, "    {\n        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
+                        for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                        fprintf(f, "};\n");
+                        if (dest_var) fprintf(f, "        %s = islisp_div(%d, c_argv);\n", dest_var, argc);
+                        else fprintf(f, "        islisp_div(%d, c_argv);\n", argc);
+                        fprintf(f, "    }\n");
+                    }
+                } else if (strcmp(fn_name, "<") == 0 && argc == 2) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_lt(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                    else fprintf(f, "    islisp_fast_lt(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                } else if (strcmp(fn_name, "<=") == 0 && argc == 2) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_lteq(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                    else fprintf(f, "    islisp_fast_lteq(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                } else if (strcmp(fn_name, ">") == 0 && argc == 2) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_gt(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                    else fprintf(f, "    islisp_fast_gt(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                } else if (strcmp(fn_name, ">=") == 0 && argc == 2) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_gteq(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                    else fprintf(f, "    islisp_fast_gteq(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                } else if (strcmp(fn_name, "=") == 0 && argc == 2) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_num_eq(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                    else fprintf(f, "    islisp_fast_num_eq(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                } else if (strcmp(fn_name, "/=") == 0 && argc == 2) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_num_neq(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                    else fprintf(f, "    islisp_fast_num_neq(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                } else if (strcmp(fn_name, "eq") == 0 && argc == 2) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_eq(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                    else fprintf(f, "    islisp_fast_eq(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                } else if (strcmp(fn_name, "eql") == 0 && argc == 2) {
+                    if (dest_var) fprintf(f, "    %s = islisp_eql(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
+                    else fprintf(f, "    islisp_eql(%s, %s);\n", argv_vars[0], argv_vars[1]);
+                } else if ((strcmp(fn_name, "not") == 0 || strcmp(fn_name, "null") == 0) && argc == 1) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_not(%s);\n", dest_var, argv_vars[0]);
+                    else fprintf(f, "    islisp_fast_not(%s);\n", argv_vars[0]);
+                } else if (strcmp(fn_name, "consp") == 0 && argc == 1) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_consp(%s);\n", dest_var, argv_vars[0]);
+                    else fprintf(f, "    islisp_fast_consp(%s);\n", argv_vars[0]);
+                } else if (strcmp(fn_name, "integerp") == 0 && argc == 1) {
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_integerp(%s);\n", dest_var, argv_vars[0]);
+                    else fprintf(f, "    islisp_fast_integerp(%s);\n", argv_vars[0]);
                 } else if (strcmp(fn_name, "cons") == 0 && argc == 2) {
                     if (dest_var) fprintf(f, "    %s = islisp_cons(%s, %s);\n", dest_var, argv_vars[0], argv_vars[1]);
                     else fprintf(f, "    islisp_cons(%s, %s);\n", argv_vars[0], argv_vars[1]);
                 } else if (strcmp(fn_name, "car") == 0 && argc == 1) {
-                    if (dest_var) fprintf(f, "    %s = islisp_car(%s);\n", dest_var, argv_vars[0]);
-                    else fprintf(f, "    islisp_car(%s);\n", argv_vars[0]);
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_car(%s);\n", dest_var, argv_vars[0]);
+                    else fprintf(f, "    islisp_fast_car(%s);\n", argv_vars[0]);
                 } else if (strcmp(fn_name, "cdr") == 0 && argc == 1) {
-                    if (dest_var) fprintf(f, "    %s = islisp_cdr(%s);\n", dest_var, argv_vars[0]);
-                    else fprintf(f, "    islisp_cdr(%s);\n", argv_vars[0]);
+                    if (dest_var) fprintf(f, "    %s = islisp_fast_cdr(%s);\n", dest_var, argv_vars[0]);
+                    else fprintf(f, "    islisp_fast_cdr(%s);\n", argv_vars[0]);
                 } else if (strcmp(fn_name, "format") == 0 && argc >= 2) {
                     int num_fmt_args = argc - 2;
                     fprintf(f, "    {\n        islisp_val c_argv[%d] = {", num_fmt_args > 0 ? num_fmt_args : 1);
@@ -897,19 +1093,44 @@ static void emit_ast(FILE *f, ast_node_t *n, const char *dest_var, comp_env_t *e
                     else fprintf(f, "        islisp_format(%s, %s, %d, c_argv);\n", argv_vars[0], argv_vars[1], num_fmt_args);
                     fprintf(f, "    }\n");
                 } else {
-                    char *lit_name = get_literal_c_name(fn_op);
-                    fprintf(f, "    {\n");
-                    fprintf(f, "        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
-                    for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
-                    fprintf(f, "};\n");
-                    if (dest_var) {
-                        fprintf(f, "        %s = islisp_funcall_argv(islisp_get_function(%s), %d, c_argv);\n",
-                                dest_var, lit_name, argc);
+                    /* Check if top-level defun */
+                    ast_node_t *defun_ast = find_toplevel_defun(fn_op);
+                    if (defun_ast) {
+                        const char *df_name = ((islisp_symbol_t*)fn_op)->name;
+                        int pcount = defun_ast->as.lambda.num_params;
+                        bool has_rest = defun_ast->as.lambda.has_rest;
+                        if (!has_rest && argc == pcount) {
+                            if (dest_var) fprintf(f, "    %s = fn_direct_user_%s(", dest_var, c_ident(df_name));
+                            else fprintf(f, "    fn_direct_user_%s(", c_ident(df_name));
+                            for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                            fprintf(f, ");\n");
+                        } else {
+                            fprintf(f, "    {\n");
+                            fprintf(f, "        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
+                            for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                            fprintf(f, "};\n");
+                            if (dest_var) {
+                                fprintf(f, "        %s = fn_user_%s(ISLISP_NIL, %d, c_argv);\n", dest_var, c_ident(df_name), argc);
+                            } else {
+                                fprintf(f, "        fn_user_%s(ISLISP_NIL, %d, c_argv);\n", c_ident(df_name), argc);
+                            }
+                            fprintf(f, "    }\n");
+                        }
                     } else {
-                        fprintf(f, "        islisp_funcall_argv(islisp_get_function(%s), %d, c_argv);\n",
-                                lit_name, argc);
+                        char *lit_name = get_literal_c_name(fn_op);
+                        fprintf(f, "    {\n");
+                        fprintf(f, "        islisp_val c_argv[%d] = {", argc > 0 ? argc : 1);
+                        for (int i = 0; i < argc; i++) fprintf(f, "%s%s", i > 0 ? ", " : "", argv_vars[i]);
+                        fprintf(f, "};\n");
+                        if (dest_var) {
+                            fprintf(f, "        %s = islisp_funcall_argv(islisp_get_function(%s), %d, c_argv);\n",
+                                    dest_var, lit_name, argc);
+                        } else {
+                            fprintf(f, "        islisp_funcall_argv(islisp_get_function(%s), %d, c_argv);\n",
+                                    lit_name, argc);
+                        }
+                        fprintf(f, "    }\n");
                     }
-                    fprintf(f, "    }\n");
                 }
             }
 
@@ -924,144 +1145,141 @@ static void emit_ast(FILE *f, ast_node_t *n, const char *dest_var, comp_env_t *e
     }
 }
 
-/* Collect lambdas and defuns for top-level code emission */
-typedef struct func_node {
-    ast_node_t *ast;
-    struct func_node *next;
-} func_node_t;
-
-static func_node_t *g_functions = NULL;
-
-static void add_function_node(ast_node_t *lam) {
-    if (!lam) return;
-    func_node_t *curr = g_functions;
-    while (curr) {
-        if (curr->ast == lam) return;
-        curr = curr->next;
-    }
-    func_node_t *fn = (func_node_t*)malloc(sizeof(func_node_t));
-    fn->ast = lam;
-    fn->next = g_functions;
-    g_functions = fn;
-}
-
-static void collect_functions(ast_node_t *n) {
-    if (!n) return;
-    if (n->type == AST_LAMBDA) {
-        add_function_node(n);
-    }
-    if (n->type == AST_DEFUN) {
-        add_function_node(n->as.defun_expr.lambda_ast);
-    }
-    switch (n->type) {
-        case AST_IF:
-            collect_functions(n->as.if_expr.test);
-            collect_functions(n->as.if_expr.then_branch);
-            collect_functions(n->as.if_expr.else_branch);
-            break;
-        case AST_PROGN:
-            for (int i = 0; i < n->as.progn.count; i++) collect_functions(n->as.progn.exprs[i]);
-            break;
-        case AST_LET:
-        case AST_LET_STAR:
-            for (int i = 0; i < n->as.let_expr.num_bindings; i++) collect_functions(n->as.let_expr.inits[i]);
-            for (int i = 0; i < n->as.let_expr.body_count; i++) collect_functions(n->as.let_expr.body[i]);
-            break;
-        case AST_FLET:
-            for (int i = 0; i < n->as.flet_expr.num_fns; i++) collect_functions(n->as.flet_expr.lambdas[i]);
-            for (int i = 0; i < n->as.flet_expr.body_count; i++) collect_functions(n->as.flet_expr.body[i]);
-            break;
-        case AST_SETQ:
-            collect_functions(n->as.setq.val);
-            break;
-        case AST_CALL:
-            for (int i = 0; i < n->as.call.argc; i++) collect_functions(n->as.call.args[i]);
-            break;
-        case AST_BLOCK:
-            for (int i = 0; i < n->as.block.body_count; i++) collect_functions(n->as.block.body[i]);
-            break;
-        case AST_RETURN_FROM:
-            collect_functions(n->as.return_from.val);
-            break;
-        case AST_TAGBODY:
-            for (int i = 0; i < n->as.tagbody.count; i++) {
-                if (n->as.tagbody.items[i]) collect_functions(n->as.tagbody.items[i]);
-            }
-            break;
-        case AST_CATCH:
-            collect_functions(n->as.catch_expr.tag);
-            for (int i = 0; i < n->as.catch_expr.count; i++) collect_functions(n->as.catch_expr.body[i]);
-            break;
-        case AST_THROW:
-            collect_functions(n->as.throw_expr.tag);
-            collect_functions(n->as.throw_expr.val);
-            break;
-        case AST_UNWIND_PROTECT:
-            collect_functions(n->as.unwind.protected_expr);
-            for (int i = 0; i < n->as.unwind.cleanup_count; i++) collect_functions(n->as.unwind.cleanups[i]);
-            break;
-        case AST_DYNAMIC_LET:
-            for (int i = 0; i < n->as.dynamic_let.num_bindings; i++) collect_functions(n->as.dynamic_let.inits[i]);
-            for (int i = 0; i < n->as.dynamic_let.body_count; i++) collect_functions(n->as.dynamic_let.body[i]);
-            break;
-        case AST_WITH_HANDLER:
-            collect_functions(n->as.with_handler.handler);
-            for (int i = 0; i < n->as.with_handler.body_count; i++) collect_functions(n->as.with_handler.body[i]);
-            break;
-        case AST_LAMBDA:
-            for (int i = 0; i < n->as.lambda.body_count; i++) collect_functions(n->as.lambda.body[i]);
-            break;
-        case AST_DEFUN:
-            collect_functions(n->as.defun_expr.lambda_ast);
-            break;
-        case AST_DEFMETHOD:
-            collect_functions(n->as.defmethod_expr.method_lambda);
-            break;
-        default:
-            break;
-    }
-}
-
 static void emit_lambda_func(FILE *f, ast_node_t *lam) {
     bool is_defun = (lam->as.lambda.name != ISLISP_NIL);
     const char *name_str = is_defun ? ((islisp_symbol_t*)lam->as.lambda.name)->name : NULL;
     int fid = lam->as.lambda.fn_id;
-
-    if (is_defun) {
-        fprintf(f, "static islisp_val fn_user_%s(islisp_val env, int argc, islisp_val *argv) {\n", c_ident(name_str));
-    } else {
-        fprintf(f, "static islisp_val fn_lambda_%d(islisp_val env, int argc, islisp_val *argv) {\n", fid);
-    }
-    fprintf(f, "    (void)env; (void)argc; (void)argv;\n");
-
-    comp_env_t inner_env;
-    memset(&inner_env, 0, sizeof(inner_env));
-    inner_env.parent = NULL;
-    inner_env.vars = ISLISP_NIL;
-    inner_env.fns = lam->as.lambda.lexical_fns;
-
     int pcount = lam->as.lambda.num_params;
-    for (int i = 0; i < pcount; i++) {
-        islisp_val p = lam->as.lambda.param_names[i];
-        const char *ps = ((islisp_symbol_t*)p)->name;
-        fprintf(f, "    islisp_val V_%s = (argc > %d) ? argv[%d] : ISLISP_NIL;\n", c_ident(ps), i, i);
-        inner_env.vars = islisp_cons(p, inner_env.vars);
-    }
-    if (lam->as.lambda.has_rest) {
+    bool has_rest = lam->as.lambda.has_rest;
+
+    if (!has_rest) {
+        /* Direct fast-call C function */
+        if (is_defun) {
+            fprintf(f, "static islisp_val fn_direct_user_%s(", c_ident(name_str));
+        } else {
+            fprintf(f, "static islisp_val fn_direct_lambda_%d(", fid);
+        }
+        if (pcount == 0) {
+            fprintf(f, "void) {\n");
+        } else {
+            for (int i = 0; i < pcount; i++) {
+                islisp_val p = lam->as.lambda.param_names[i];
+                const char *ps = ((islisp_symbol_t*)p)->name;
+                fprintf(f, "%sislisp_val V_%s", i > 0 ? ", " : "", c_ident(ps));
+            }
+            fprintf(f, ") {\n");
+        }
+
+        comp_env_t inner_env;
+        memset(&inner_env, 0, sizeof(inner_env));
+        inner_env.parent = NULL;
+        inner_env.vars = ISLISP_NIL;
+        inner_env.fns = lam->as.lambda.lexical_fns;
+
+        for (int i = 0; i < pcount; i++) {
+            inner_env.vars = islisp_cons(lam->as.lambda.param_names[i], inner_env.vars);
+        }
+
+        fprintf(f, "    islisp_val return_val = ISLISP_NIL;\n");
+        for (int i = 0; i < lam->as.lambda.body_count; i++) {
+            const char *d = (i == lam->as.lambda.body_count - 1) ? "return_val" : NULL;
+            emit_ast(f, lam->as.lambda.body[i], d, &inner_env);
+        }
+        fprintf(f, "    return return_val;\n");
+        fprintf(f, "}\n\n");
+
+        /* Closure-compatible adapter */
+        if (is_defun) {
+            fprintf(f, "static islisp_val fn_user_%s(islisp_val env, int argc, islisp_val *argv) {\n", c_ident(name_str));
+        } else {
+            fprintf(f, "static islisp_val fn_lambda_%d(islisp_val env, int argc, islisp_val *argv) {\n", fid);
+        }
+        fprintf(f, "    (void)env; (void)argc; (void)argv;\n");
+        fprintf(f, "    return ");
+        if (is_defun) {
+            fprintf(f, "fn_direct_user_%s(", c_ident(name_str));
+        } else {
+            fprintf(f, "fn_direct_lambda_%d(", fid);
+        }
+        for (int i = 0; i < pcount; i++) {
+            fprintf(f, "%s(argc > %d) ? argv[%d] : ISLISP_NIL", i > 0 ? ", " : "", i, i);
+        }
+        fprintf(f, ");\n");
+        fprintf(f, "}\n\n");
+    } else {
+        if (is_defun) {
+            fprintf(f, "static islisp_val fn_user_%s(islisp_val env, int argc, islisp_val *argv) {\n", c_ident(name_str));
+        } else {
+            fprintf(f, "static islisp_val fn_lambda_%d(islisp_val env, int argc, islisp_val *argv) {\n", fid);
+        }
+        fprintf(f, "    (void)env; (void)argc; (void)argv;\n");
+
+        comp_env_t inner_env;
+        memset(&inner_env, 0, sizeof(inner_env));
+        inner_env.parent = NULL;
+        inner_env.vars = ISLISP_NIL;
+        inner_env.fns = lam->as.lambda.lexical_fns;
+
+        for (int i = 0; i < pcount; i++) {
+            islisp_val p = lam->as.lambda.param_names[i];
+            const char *ps = ((islisp_symbol_t*)p)->name;
+            fprintf(f, "    islisp_val V_%s = (argc > %d) ? argv[%d] : ISLISP_NIL;\n", c_ident(ps), i, i);
+            inner_env.vars = islisp_cons(p, inner_env.vars);
+        }
         islisp_val r = lam->as.lambda.rest_var;
         const char *rs = ((islisp_symbol_t*)r)->name;
         fprintf(f, "    islisp_val V_%s = (argc > %d) ? islisp_list(argc - %d, argv + %d) : ISLISP_NIL;\n",
                 c_ident(rs), pcount, pcount, pcount);
         inner_env.vars = islisp_cons(r, inner_env.vars);
-    }
 
-    fprintf(f, "    islisp_val return_val = ISLISP_NIL;\n");
-    for (int i = 0; i < lam->as.lambda.body_count; i++) {
-        const char *d = (i == lam->as.lambda.body_count - 1) ? "return_val" : NULL;
-        emit_ast(f, lam->as.lambda.body[i], d, &inner_env);
+        fprintf(f, "    islisp_val return_val = ISLISP_NIL;\n");
+        for (int i = 0; i < lam->as.lambda.body_count; i++) {
+            const char *d = (i == lam->as.lambda.body_count - 1) ? "return_val" : NULL;
+            emit_ast(f, lam->as.lambda.body[i], d, &inner_env);
+        }
+        fprintf(f, "    return return_val;\n");
+        fprintf(f, "}\n\n");
     }
-    fprintf(f, "    return return_val;\n");
-    fprintf(f, "}\n\n");
+}
+
+static void emit_function_forward_declarations(FILE *f) {
+    func_node_t *fn = g_functions;
+    while (fn) {
+        ast_node_t *lam = fn->ast;
+        bool is_defun = (lam->as.lambda.name != ISLISP_NIL);
+        int pcount = lam->as.lambda.num_params;
+        bool has_rest = lam->as.lambda.has_rest;
+
+        if (is_defun) {
+            const char *cname = c_ident(((islisp_symbol_t*)lam->as.lambda.name)->name);
+            if (!has_rest) {
+                fprintf(f, "static islisp_val fn_direct_user_%s(", cname);
+                if (pcount == 0) fprintf(f, "void");
+                else {
+                    for (int i = 0; i < pcount; i++) {
+                        fprintf(f, "%sislisp_val", i > 0 ? ", " : "");
+                    }
+                }
+                fprintf(f, ");\n");
+            }
+            fprintf(f, "static islisp_val fn_user_%s(islisp_val env, int argc, islisp_val *argv);\n", cname);
+        } else {
+            int fid = lam->as.lambda.fn_id;
+            if (!has_rest) {
+                fprintf(f, "static islisp_val fn_direct_lambda_%d(", fid);
+                if (pcount == 0) fprintf(f, "void");
+                else {
+                    for (int i = 0; i < pcount; i++) {
+                        fprintf(f, "%sislisp_val", i > 0 ? ", " : "");
+                    }
+                }
+                fprintf(f, ");\n");
+            }
+            fprintf(f, "static islisp_val fn_lambda_%d(islisp_val env, int argc, islisp_val *argv);\n", fid);
+        }
+        fn = fn->next;
+    }
+    fprintf(f, "\n");
 }
 
 static void emit_literal_init(FILE *f, lit_node_t *n) {
@@ -1129,23 +1347,10 @@ bool islisp_compile_file_to_c(const char *in_lsp, const char *out_c) {
     fprintf(f, "\n");
 
     /* Forward declare functions */
-    func_node_t *fn = g_functions;
-    while (fn) {
-        ast_node_t *lam = fn->ast;
-        bool is_defun = (lam->as.lambda.name != ISLISP_NIL);
-        if (is_defun) {
-            fprintf(f, "static islisp_val fn_user_%s(islisp_val env, int argc, islisp_val *argv);\n",
-                    c_ident(((islisp_symbol_t*)lam->as.lambda.name)->name));
-        } else {
-            fprintf(f, "static islisp_val fn_lambda_%d(islisp_val env, int argc, islisp_val *argv);\n",
-                    lam->as.lambda.fn_id);
-        }
-        fn = fn->next;
-    }
-    fprintf(f, "\n");
+    emit_function_forward_declarations(f);
 
     /* Emit function definitions */
-    fn = g_functions;
+    func_node_t *fn = g_functions;
     while (fn) {
         emit_lambda_func(f, fn->ast);
         fn = fn->next;
@@ -1214,21 +1419,10 @@ bool islisp_compile_string_to_c(const char *code, const char *out_c) {
     }
     fprintf(f, "\n");
 
-    func_node_t *fn = g_functions;
-    while (fn) {
-        ast_node_t *lam = fn->ast;
-        if (lam->as.lambda.name != ISLISP_NIL) {
-            fprintf(f, "static islisp_val fn_user_%s(islisp_val env, int argc, islisp_val *argv);\n",
-                    c_ident(((islisp_symbol_t*)lam->as.lambda.name)->name));
-        } else {
-            fprintf(f, "static islisp_val fn_lambda_%d(islisp_val env, int argc, islisp_val *argv);\n",
-                    lam->as.lambda.fn_id);
-        }
-        fn = fn->next;
-    }
-    fprintf(f, "\n");
+    /* Forward declare functions */
+    emit_function_forward_declarations(f);
 
-    fn = g_functions;
+    func_node_t *fn = g_functions;
     while (fn) {
         emit_lambda_func(f, fn->ast);
         fn = fn->next;
@@ -1277,9 +1471,9 @@ bool islisp_compile_c_to_binary(const char *in_c, const char *out_exe) {
     FILE *f = fopen("libislisp_rt.a", "rb");
     if (f) {
         fclose(f);
-        snprintf(cmd, sizeof(cmd), "gcc -O2 -Iinclude \"%s\" libislisp_rt.a -lm -o \"%s\"", in_c, out_exe);
+        snprintf(cmd, sizeof(cmd), "gcc -O3 -Iinclude \"%s\" libislisp_rt.a -lm -o \"%s\"", in_c, out_exe);
     } else {
-        snprintf(cmd, sizeof(cmd), "gcc -O2 -Iinclude \"%s\" src/runtime/runtime.c src/runtime/math.c src/runtime/list.c src/runtime/string.c src/runtime/io.c src/runtime/error.c src/runtime/ilos.c -lm -o \"%s\"", in_c, out_exe);
+        snprintf(cmd, sizeof(cmd), "gcc -O3 -Iinclude \"%s\" src/runtime/runtime.c src/runtime/math.c src/runtime/list.c src/runtime/string.c src/runtime/io.c src/runtime/error.c src/runtime/ilos.c -lm -o \"%s\"", in_c, out_exe);
     }
     int ret = system(cmd);
     return (ret == 0);
